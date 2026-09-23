@@ -1,0 +1,38 @@
+{
+  "name": "open-browser",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An open-source, privacy-first, adaptive browser.",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && electron .",
+    "dist": "npm run build && electron-builder"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "electron": "^36.0.0",
+    "electron-builder": "^26.0.12",
+    "typescript": "^5.8.0"
+  },
+  "build": {
+    "appId": "org.openbrowser.app",
+    "productName": "Open Browser",
+    "files": [
+      "dist/**/*",
+      "src/renderer/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
