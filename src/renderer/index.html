@@ -8,15 +8,13 @@
   </head>
   <body>
     <header class="toolbar">
-      <button aria-label="Go back" disabled>‹</button>
-      <button aria-label="Go forward" disabled>›</button>
-      <button aria-label="Reload" disabled>↻</button>
-      <input aria-label="Address" placeholder="Search or enter address" />
-      <button aria-label="New tab">+</button>
+      <button id="back-button" aria-label="Go back" disabled>‹</button>
+      <button id="forward-button" aria-label="Go forward" disabled>›</button>
+      <button id="reload-button" aria-label="Reload" data-mode="reload">↻</button>
+      <input id="address-input" aria-label="Address" placeholder="Search or enter address" />
     </header>
-    <main class="empty-state">
-      <h1>Open Browser</h1>
-      <p>A simple, private browser foundation.</p>
-    </main>
+    <div id="loading-bar"></div>
+    <div id="error-banner" role="alert"></div>
+    <script src="../../dist/renderer/renderer.js"></script>
   </body>
 </html>

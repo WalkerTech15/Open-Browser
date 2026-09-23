@@ -4,9 +4,13 @@
   "private": true,
   "description": "An open-source, privacy-first, adaptive browser.",
   "main": "dist/main.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "tsc",
     "start": "npm run build && electron .",
+    "test": "npm run build && node --test dist/engine/*.test.js",
     "dist": "npm run build && electron-builder"
   },
   "devDependencies": {
