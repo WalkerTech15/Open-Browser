@@ -1,7 +1,9 @@
 import { WebContentsView } from 'electron';
 import type { BrowserWindow } from 'electron';
-import type { BrowserEngine, NavigationState, NavigationStateListener } from './BrowserEngine';
-import { isNavigableUrl } from './navigation';
+import type { BrowserEngine } from '../interface/BrowserEngine';
+import type { NavigationState, NavigationStateListener } from '../../shared/types/navigationState';
+import { isNavigableUrl } from '../../core/navigation/navigation';
+import { SECURE_WEB_PREFERENCES } from '../../shared/constants/secureWebPreferences';
 
 const ABORTED_ERROR_CODE = -3; // ERR_ABORTED, expected when the user hits Stop.
 
@@ -49,11 +51,7 @@ export class ChromiumEngine implements BrowserEngine {
     this.toolbarHeight = toolbarHeight;
 
     const view = new WebContentsView({
-      webPreferences: {
-        contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: true
-      }
+      webPreferences: SECURE_WEB_PREFERENCES
     });
     this.view = view;
 
@@ -62,10 +60,28 @@ export class ChromiumEngine implements BrowserEngine {
     window.on('resize', this.layout);
 
     const wc = view.webContents;
-    wc.on('did-start-loading', () => this.updateState({ isLoading: true }));
-    wc.on('did-navigate', (_event, url) => this.handleNavigated(url));
-    wc.on('did-navigate-in-page', (_event, url) => this.handleNavigated(url));
+
+    // Every handler below can still be queued and fired by Chromium for a
+    // brief moment after the tab/window is closed (loadURL/network callbacks
+    // don't cancel synchronously). Each one re-checks wc.isDestroyed() before
+    // touching wc again, since calling any native webContents method on a
+    // destroyed object throws "Object has been destroyed". The listeners
+    // themselves are removed in destroy() so this is defense in depth, not
+    // the only guard.
+    wc.on('did-start-loading', () => {
+      if (wc.isDestroyed()) return;
+      this.updateState({ isLoading: true });
+    });
+    wc.on('did-navigate', (_event, url) => {
+      if (wc.isDestroyed()) return;
+      this.handleNavigated(url);
+    });
+    wc.on('did-navigate-in-page', (_event, url) => {
+      if (wc.isDestroyed()) return;
+      this.handleNavigated(url);
+    });
     wc.on('did-stop-loading', () => {
+      if (wc.isDestroyed()) return;
       this.updateState({
         isLoading: false,
         canGoBack: wc.navigationHistory.canGoBack(),
@@ -74,6 +90,7 @@ export class ChromiumEngine implements BrowserEngine {
     });
     wc.on('did-fail-load', (_event, errorCode, errorDescription, _validatedUrl, isMainFrame) => {
       if (errorCode === ABORTED_ERROR_CODE || !isMainFrame) return;
+      if (wc.isDestroyed()) return;
       const failedUrl = this.lastRequestedUrl;
       this.updateState({ isLoading: false, error: errorDescription || 'Failed to load page' });
       void wc.loadURL(errorPageDataUrl(failedUrl, errorDescription || 'Failed to load page'));
@@ -81,7 +98,7 @@ export class ChromiumEngine implements BrowserEngine {
   }
 
   private layout = (): void => {
-    if (!this.window || !this.view) return;
+    if (!this.window || !this.view || this.window.isDestroyed()) return;
     const bounds = this.window.getContentBounds();
     this.view.setBounds({
       x: 0,
@@ -107,9 +124,21 @@ export class ChromiumEngine implements BrowserEngine {
     if (!this.view) throw new Error('ChromiumEngine is not attached to a window.');
     if (!isNavigableUrl(url)) throw new Error(`Refusing to navigate to unsupported URL: ${url}`);
 
+    const webContents = this.view.webContents;
     this.lastRequestedUrl = url;
     this.updateState({ url, isLoading: true, error: null });
-    await this.view.webContents.loadURL(url);
+
+    try {
+      await webContents.loadURL(url);
+    } catch (error) {
+      // The tab/window can be closed while this navigation is still in
+      // flight; Electron then rejects loadURL() because the webContents was
+      // destroyed mid-request. That's an expected lifecycle race (there's
+      // nothing left to update), not a bug — swallow only that case and
+      // rethrow anything else unchanged.
+      if (webContents.isDestroyed()) return;
+      throw error;
+    }
   }
 
   goBack(): void {
@@ -145,11 +174,32 @@ export class ChromiumEngine implements BrowserEngine {
   }
 
   destroy(): void {
-    this.window?.off('resize', this.layout);
-    if (this.window && this.view) {
-      this.window.contentView.removeChildView(this.view);
+    const window = this.window;
+    const view = this.view;
+
+    // By the time a window's 'closed' event fires (the usual trigger for
+    // this method), Electron already considers the BrowserWindow destroyed
+    // — window.contentView is a native getter and throws "Object has been
+    // destroyed" if touched at that point, so it's guarded here.
+    if (window) {
+      window.off('resize', this.layout);
+      if (view && !window.isDestroyed()) {
+        window.contentView.removeChildView(view);
+      }
     }
-    this.view?.webContents.close();
+
+    if (view) {
+      const webContents = view.webContents;
+      // Remove our own listeners first so no queued/in-flight Chromium
+      // event (did-navigate, did-fail-load, ...) can fire into this engine
+      // after this point, even during the brief window before the native
+      // object fully tears down.
+      webContents.removeAllListeners();
+      if (!webContents.isDestroyed()) {
+        webContents.close();
+      }
+    }
+
     this.view = null;
     this.window = null;
     this.listeners.clear();

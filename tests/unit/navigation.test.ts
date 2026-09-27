@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveAddressInput, isNavigableUrl, buildSearchUrl } from './navigation';
+import { resolveAddressInput, isNavigableUrl, buildSearchUrl } from '../../src/core/navigation/navigation';
 
 test('resolveAddressInput: empty input is a no-op', () => {
   assert.equal(resolveAddressInput(''), null);

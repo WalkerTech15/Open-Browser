@@ -1,9 +1,12 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { NavigationState } from './engine/BrowserEngine';
+import type { NavigationState } from '../../shared/types/navigationState';
+import type { OpenBrowserApi } from '../../shared/types/openBrowserApi';
 
-// A sandboxed preload script can only `require` a small allowlist of built-ins
-// (plus 'electron') — it cannot load other local project files. So the IPC
-// channel names are duplicated here rather than imported from ./shared/ipc.
+// SECURITY: a sandboxed preload script (sandbox: true) can only `require` a
+// small allowlist of built-ins plus 'electron' — it cannot load other local
+// project files at runtime. So these channel names are duplicated from
+// src/shared/constants/ipcChannels.ts rather than imported; keep them in
+// sync if that file changes.
 const IpcChannel = {
   Navigate: 'nav:navigate',
   Back: 'nav:back',
@@ -13,7 +16,10 @@ const IpcChannel = {
   State: 'nav:state'
 } as const;
 
-const openBrowserApi = {
+// SECURITY: this is the entire API surface exposed to every renderer. It is
+// intentionally narrow — five fixed one-way commands and one subscription —
+// with no generic ipcRenderer passthrough and no Node/filesystem access.
+const openBrowserApi: OpenBrowserApi = {
   navigate(input: string): void {
     ipcRenderer.send(IpcChannel.Navigate, input);
   },
@@ -37,5 +43,3 @@ const openBrowserApi = {
 };
 
 contextBridge.exposeInMainWorld('openBrowser', openBrowserApi);
-
-export type OpenBrowserApi = typeof openBrowserApi;

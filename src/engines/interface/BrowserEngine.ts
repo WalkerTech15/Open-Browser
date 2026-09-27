@@ -1,16 +1,12 @@
 import type { BrowserWindow } from 'electron';
+import type { NavigationState, NavigationStateListener } from '../../shared/types/navigationState';
 
-export interface NavigationState {
-  /** Address-bar URL: the last requested URL, even if it failed to load. */
-  url: string;
-  isLoading: boolean;
-  canGoBack: boolean;
-  canGoForward: boolean;
-  error: string | null;
-}
-
-export type NavigationStateListener = (state: NavigationState) => void;
-
+/**
+ * The contract every browser engine (Chromium today, Gecko in the future —
+ * see src/engines/gecko/README.md) must implement. Nothing outside
+ * src/engines/ should depend on a concrete engine class directly; depend on
+ * this interface instead so engines stay swappable.
+ */
 export interface BrowserEngine {
   readonly name: string;
 
