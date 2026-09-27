@@ -11,6 +11,7 @@ Open Browser is an open-source, privacy-first adaptive desktop browser built wit
 ### Implementation agent
 
 - Inspect the repository, status, commits, and relevant docs before editing.
+- If the request is ambiguous, ask the user one focused clarification question before changing files.
 - State model, effort, current behavior, desired behavior, scope, non-goals, acceptance criteria, and stop conditions.
 - Identify architecture, security, privacy, performance, and compatibility impact.
 - Implement the smallest safe change, add focused tests, and update relevant docs.
@@ -26,6 +27,11 @@ Open Browser is an open-source, privacy-first adaptive desktop browser built wit
 - Distinguish verified, not verified, blocked, partial, stubbed, simulated, broken, missing, and pre-existing behavior.
 - Answer commit and release readiness with `Yes` or `No` first and name the exact blocker when `No`.
 
+### Communication standard
+
+- Explain every result in simple, fast language while preserving the technical details needed by experienced developers and IT/security reviewers.
+- Use clear labels such as `Verified`, `Not verified`, `Blocked`, and `Recommended next step`.
+
 ## Required task checklist
 
 Copy and update this checklist for each task. Tick items only after verification.
@@ -35,12 +41,13 @@ Copy and update this checklist for each task. Tick items only after verification
 - [ ] Inspect relevant architecture and reproduce the starting behavior
 - [ ] Define scope, allowed files, non-goals, acceptance criteria, and stop conditions
 - [ ] Identify security and privacy impact
+- [ ] Perform a lightweight security review for every change; perform a deeper review for security-sensitive areas
 - [ ] State the plan, model, and effort
 - [ ] Implement the smallest safe change
 - [ ] Add or update focused tests
 - [ ] Run focused tests, lint, typecheck, build, and security checks when available
 - [ ] Test the real Electron runtime
-- [ ] Test the packaged app when packaging is affected
+- [ ] Test the packaged `.exe` when Electron, packaging, preload, entry-point, or renderer-path files change
 - [ ] Review the final diff and intended file list
 - [ ] Report commit, push, release, and deployment status
 
@@ -112,7 +119,7 @@ Use simple English first, then technical detail. Update setup, architecture, IPC
 
 ## Commit, push, and release boundaries
 
-- Do not commit automatically unless explicitly authorized.
+- The user alone decides when to commit. Do not commit unless the user clearly authorizes it.
 - Before committing, verify intended files only, no secrets, completed tests, and no unrelated changes.
 - Do not push, package, publish, release, or deploy without explicit authorization.
 - Verify the exact branch and commit before release and provide rollback instructions.

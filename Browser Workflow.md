@@ -7,6 +7,7 @@ Public project guidance for AI agents and contributors. Never place passwords, A
 ### Claude Code — implementation
 
 - Inspect the repository before changing it.
+- If the request is ambiguous, ask the user one focused clarification question before changing files.
 - State a short plan, scope, and non-goals.
 - Implement the smallest coherent change.
 - Add or update focused tests and documentation.
@@ -22,6 +23,10 @@ Public project guidance for AI agents and contributors. Never place passwords, A
 ### User — product authority
 
 The user decides product direction, scope, commits, pushes, releases, and deployments.
+
+### Communication standard
+
+Explain results simply and quickly while preserving the technical detail needed by experienced developers and IT/security reviewers.
 
 ## Standard workflow
 
@@ -39,12 +44,14 @@ Claude Code must update this checklist and mark items complete only after verifi
 - [ ] Inspect repository and relevant documentation
 - [ ] State plan, scope, and non-goals
 - [ ] Check architecture, security, privacy, and performance impact
+- [ ] Perform a lightweight security review for every change and a deeper review for security-sensitive areas
 - [ ] Implement the smallest coherent change
 - [ ] Add or update focused tests
 - [ ] Update documentation when needed
 - [ ] Run build and tests
 - [ ] Run `git diff --check`
 - [ ] Perform manual or rendered verification where relevant
+- [ ] Test the packaged `.exe` when Electron, packaging, preload, entry-point, or renderer-path files change
 - [ ] Review the final diff for unrelated changes
 - [ ] Report changed files, commands, results, and limitations
 
@@ -114,6 +121,7 @@ Add security, accessibility, startup, crash-recovery, performance, and manual UI
 ## Commit and release rules
 
 - Do not commit automatically.
+- The user alone decides when to commit; clear authorization is required.
 - Do not push automatically.
 - Do not publish releases without authorization.
 - Do not commit `node_modules/`, `dist/`, or `release/`.
