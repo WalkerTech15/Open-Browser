@@ -11,6 +11,7 @@ Open Browser is an open-source, privacy-first adaptive desktop browser built wit
 - This file is authoritative for repository operations, agent permissions, commits, pushes, merges, releases, and the required final report.
 - [`docs/COLLABORATION.md`](docs/COLLABORATION.md) is authoritative for Claude Code ↔ Codex collaboration, QA handoff, conflict disclosure, disagreement handling, and agent roles. It defines the four governance responses: `AGREED`, `AGREED WITH NON-BLOCKING NOTE`, `CONFLICT DETECTED`, and `OBJECTION`.
 - [`Browser Workflow.md`](Browser%20Workflow.md) is the short contributor-facing development process. It does not override either document above.
+- [`docs/AI_TOOLING.md`](docs/AI_TOOLING.md) defines how Claude Code uses skills, subagents, councils, and token-efficient context. It covers tooling usage only and does not override this file or `docs/COLLABORATION.md`.
 - If they ever conflict on repository operations, this file wins.
 
 ## Roles
@@ -38,6 +39,7 @@ Open Browser is an open-source, privacy-first adaptive desktop browser built wit
 
 - Explain every result in simple, fast language while preserving the technical details needed by experienced developers and IT/security reviewers.
 - Use clear labels such as `Verified`, `Not verified`, `Blocked`, and `Recommended next step`.
+- Explain shorthand in plain English the first time it appears in a report. Terms and codes are defined in [`docs/GLOSSARY.md`](docs/GLOSSARY.md).
 
 ## Required task checklist
 

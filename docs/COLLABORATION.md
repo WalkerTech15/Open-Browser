@@ -4,6 +4,8 @@
 > This document defines the collaboration model between Claude Code, Codex, and any future AI agents working on this browser project.
 >
 > **Core rule:** Claude Code builds, Codex independently verifies, Claude Code fixes, Codex retests, and the user has final authority.
+>
+> **Terminology:** project shorthand and tracking identifiers (for example V1, ND-##, OQ-##, QV-##, QA-##, ADR, and the work states) are defined in [`docs/GLOSSARY.md`](GLOSSARY.md).
 
 ---
 
@@ -151,15 +153,19 @@ If both `Browser Workflow.md` and `PROJECT_WORKFLOW.md` exist and cover the same
 Every feature should be in one of these states:
 
 - `BUILDING`
+- `DONE`
 - `IN_QA`
 - `FIXING`
 - `RETESTING`
 - `ACCEPTED`
 - `BLOCKED`
 
+Normal progression: `BUILDING` → `DONE` (ready for QA) → `IN_QA` → `FIXING` if needed → `RETESTING` → `ACCEPTED`.
+
 Ownership:
 
 - `BUILDING` → Claude Code owns implementation.
+- `DONE` → the builder's work is complete and the feature is ready for QA (see §20). It does not mean QA has passed.
 - `IN_QA` → Codex owns review.
 - `FIXING` → Claude Code owns fixes.
 - `RETESTING` → Codex owns verification.
@@ -715,25 +721,37 @@ A feature is not fully accepted if documentation materially contradicts behavior
 
 ---
 
-# 20. Definition of Done
+# 20. Definition of Done and Accepted
 
-A feature is DONE only when:
+## DONE (builder side)
+
+A feature is DONE when the implementation work is complete from the builder's side, and it is ready for QA:
 
 - implementation exists;
-- behavior matches specification;
-- tests exist;
-- tests pass;
+- behavior matches the specification, as far as the builder can tell;
+- required tests were written and run;
+- documentation is updated;
+- migrations are documented when relevant;
+- known limitations are recorded;
+- the implementation handoff (§8) is ready.
+
+DONE does not mean QA passed.
+
+## ACCEPTED (QA side)
+
+A feature is ACCEPTED only after Codex has reviewed and retested it under this governance:
+
+- behavior matches the specification;
+- tests exist and pass;
 - no Critical issues remain;
 - no High issues remain;
 - security review passes;
 - privacy review passes;
 - performance impact is acceptable;
-- documentation is updated;
-- migrations are documented when relevant;
-- known limitations are recorded;
+- documentation matches the behavior;
 - Codex retest passes.
 
-DONE does not mean committed.
+ACCEPTED does not mean committed, pushed, merged, or released. Only the user authorizes those actions.
 
 ---
 

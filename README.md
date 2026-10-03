@@ -122,6 +122,7 @@ in source code, tests, logs, screenshots, issues, or pull requests.
 - [`Browser Workflow.md`](Browser%20Workflow.md) — contributor and AI workflow
 - [`AI_WORKFLOW.md`](AI_WORKFLOW.md) — detailed agent instructions
 - [`docs/COLLABORATION.md`](docs/COLLABORATION.md) — Claude Code ↔ Codex collaboration governance
+- [`docs/GLOSSARY.md`](docs/GLOSSARY.md) — plain-language meaning of project terms and codes (V1, ND-##, ACCEPTED, and so on)
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system structure and data flow
 - [`docs/SECURITY.md`](docs/SECURITY.md) — implemented controls and gaps
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — current, planned, experimental, and future work
