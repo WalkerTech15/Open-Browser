@@ -110,4 +110,4 @@ Important behavior must be documented. Implemented, partial, experimental, simul
 
 Open Browser succeeds when a normal person can install it, browse reliably, understand its privacy choices, customize the experience, and remain in control of their data—while technical users can inspect, test, extend, and audit the project with confidence.
 
-Specific milestones and release criteria belong in `ROADMAP.md`. Detailed behavior belongs in `SPECIFICATION.md`. Contributor and AI behavior belongs in `PROJECT_WORKFLOW.md` and `AI_WORKFLOW.md`.
+Specific milestones and release criteria belong in `ROADMAP.md`. Detailed behavior belongs in `SPECIFICATION.md`. Contributor and AI behavior is split across three documents: `Browser Workflow.md` (short contributor-facing development process), `AI_WORKFLOW.md` (repository-operation rules, AI permissions, commits/pushes/releases, and final-report requirements), and `docs/COLLABORATION.md` (Claude Code/Codex collaboration, QA handoff, conflict disclosure, disagreement handling, and agent roles).

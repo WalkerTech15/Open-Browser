@@ -79,7 +79,9 @@ docs/
 
 ## Development workflow
 
-Read `Browser Workflow.md` and `AI_WORKFLOW.md` before asking an AI agent to
+Read `Browser Workflow.md`, `AI_WORKFLOW.md`, and
+[`docs/COLLABORATION.md`](docs/COLLABORATION.md) (Claude Code ↔ Codex
+collaboration, QA handoff, and conflict rules) before asking an AI agent to
 change the project. The expected flow is:
 
 ```text
@@ -119,6 +121,7 @@ in source code, tests, logs, screenshots, issues, or pull requests.
 
 - [`Browser Workflow.md`](Browser%20Workflow.md) — contributor and AI workflow
 - [`AI_WORKFLOW.md`](AI_WORKFLOW.md) — detailed agent instructions
+- [`docs/COLLABORATION.md`](docs/COLLABORATION.md) — Claude Code ↔ Codex collaboration governance
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system structure and data flow
 - [`docs/SECURITY.md`](docs/SECURITY.md) — implemented controls and gaps
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — current, planned, experimental, and future work

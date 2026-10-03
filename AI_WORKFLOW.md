@@ -4,7 +4,14 @@ Public project instructions for Claude Code, Codex, OpenAI models, and future co
 
 ## Project context
 
-Open Browser is an open-source, privacy-first adaptive desktop browser built with Electron and TypeScript. The current prototype is Chromium-only, with separated main, preload/security, renderer, core, engine, services, shared, tests, and documentation layers. Read `README.md`, `PROJECT_WORKFLOW.md`, and relevant `docs/` files before editing.
+Open Browser is an open-source, privacy-first adaptive desktop browser built with Electron and TypeScript. The current prototype is Chromium-only, with separated main, preload/security, renderer, core, engine, services, shared, tests, and documentation layers. Read `README.md`, `Browser Workflow.md`, `docs/COLLABORATION.md`, and relevant `docs/` files before editing.
+
+## Document authority
+
+- This file is authoritative for repository operations, agent permissions, commits, pushes, merges, releases, and the required final report.
+- [`docs/COLLABORATION.md`](docs/COLLABORATION.md) is authoritative for Claude Code ↔ Codex collaboration, QA handoff, conflict disclosure, disagreement handling, and agent roles. It defines the four governance responses: `AGREED`, `AGREED WITH NON-BLOCKING NOTE`, `CONFLICT DETECTED`, and `OBJECTION`.
+- [`Browser Workflow.md`](Browser%20Workflow.md) is the short contributor-facing development process. It does not override either document above.
+- If they ever conflict on repository operations, this file wins.
 
 ## Roles
 

@@ -2,6 +2,8 @@
 
 Public project guidance for AI agents and contributors. Never place passwords, API keys, tokens, private URLs, or confidential information in this file.
 
+This is the short development-process summary. Repository-operation rules and the required final report are defined in `AI_WORKFLOW.md`; Claude Code ↔ Codex collaboration, handoffs, and conflict handling are defined in `docs/COLLABORATION.md`. If this file disagrees with either, they win.
+
 ## Roles
 
 ### Claude Code — implementation
