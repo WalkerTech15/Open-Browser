@@ -18,11 +18,12 @@ const IpcChannel = {
   NewTab: 'tabs:new',
   ActivateTab: 'tabs:activate',
   CloseTab: 'tabs:close',
-  TabsState: 'tabs:state'
+  TabsState: 'tabs:state',
+  HistoryOpen: 'history:open'
 } as const;
 
 // SECURITY: this is the entire API surface exposed to every renderer. It is
-// intentionally narrow — five fixed one-way commands and one subscription —
+// intentionally narrow — fixed, typed methods only —
 // with no generic ipcRenderer passthrough and no Node/filesystem access.
 const openBrowserApi: OpenBrowserApi = {
   navigate(input: string): void {
@@ -58,6 +59,9 @@ const openBrowserApi: OpenBrowserApi = {
     const handler = (_event: Electron.IpcRendererEvent, state: BrowserTabsState): void => listener(state);
     ipcRenderer.on(IpcChannel.TabsState, handler);
     return () => ipcRenderer.removeListener(IpcChannel.TabsState, handler);
+  },
+  showHistory(): void {
+    ipcRenderer.send(IpcChannel.HistoryOpen);
   }
 };
 

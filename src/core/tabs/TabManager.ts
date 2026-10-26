@@ -8,9 +8,10 @@ export type TabManagerListener = (tabs: BrowserTabsState, activeState: Navigatio
 
 interface ManagedTab {
   id: string;
-  engine: BrowserEngine;
+  engine: BrowserEngine | null;
   state: NavigationState;
   unsubscribe: () => void;
+  pendingInitialNavigation: boolean;
 }
 
 const EMPTY_NAVIGATION_STATE: NavigationState = {
@@ -21,7 +22,7 @@ const EMPTY_NAVIGATION_STATE: NavigationState = {
   error: null
 };
 
-/** Owns the independent engines and selection state for one browser window. */
+/** Owns tab metadata, on-demand engines, and selection state for one window. */
 export class TabManager {
   private readonly tabs: ManagedTab[] = [];
   private readonly listeners = new Set<TabManagerListener>();
@@ -38,32 +39,34 @@ export class TabManager {
 
   createTab(url = this.startUrl): string {
     if (this.destroyed) throw new Error('Cannot create a tab after the tab manager is destroyed.');
+    const tab = this.addTab(url, false);
+    this.activateTab(tab.id);
+    this.navigateTab(tab, url);
+    return tab.id;
+  }
 
-    const engine = this.createEngine();
+  /** Restores tab metadata but initially loads only the previously active page. */
+  restoreTabs(urls: string[], activeTabIndex: number): void {
+    if (this.destroyed) return;
+    for (const url of urls) this.addTab(url, true);
+    if (this.tabs.length === 0) {
+      this.createTab(this.startUrl);
+      return;
+    }
+    const index = Math.min(Math.max(0, Math.trunc(activeTabIndex)), this.tabs.length - 1);
+    this.activateTab(this.tabs[index].id);
+  }
+
+  private addTab(url: string, pendingInitialNavigation: boolean): ManagedTab {
     const tab: ManagedTab = {
       id: `tab-${this.nextId++}`,
-      engine,
-      state: engine.getState(),
-      unsubscribe: () => {}
+      engine: null,
+      state: { ...EMPTY_NAVIGATION_STATE, url: pendingInitialNavigation ? url : '' },
+      unsubscribe: () => {},
+      pendingInitialNavigation
     };
-
-    try {
-      engine.attach(this.window, this.browserChromeHeight);
-      engine.setVisible(false);
-      tab.unsubscribe = engine.onStateChange((state) => {
-        if (this.destroyed || !this.tabs.includes(tab)) return;
-        tab.state = state;
-        this.emit();
-      });
-      this.tabs.push(tab);
-    } catch (error) {
-      engine.destroy();
-      throw error;
-    }
-
-    this.activateTab(tab.id);
-    void engine.navigate(url);
-    return tab.id;
+    this.tabs.push(tab);
+    return tab;
   }
 
   activateTab(tabId: string): boolean {
@@ -71,15 +74,19 @@ export class TabManager {
     const next = this.tabs.find((tab) => tab.id === tabId);
     if (!next) return false;
 
+    this.ensureEngine(next);
+
     if (this.activeTabId === next.id) {
-      next.engine.setVisible(true);
+      next.engine?.setVisible(true);
+      this.loadPendingTab(next);
       return true;
     }
 
-    this.activeTab()?.engine.setVisible(false);
+    this.activeTab()?.engine?.setVisible(false);
     this.activeTabId = next.id;
-    next.engine.setVisible(true);
+    next.engine?.setVisible(true);
     this.emit();
+    this.loadPendingTab(next);
     return true;
   }
 
@@ -91,8 +98,8 @@ export class TabManager {
     const [closed] = this.tabs.splice(index, 1);
     const wasActive = this.activeTabId === closed.id;
     closed.unsubscribe();
-    closed.engine.setVisible(false);
-    closed.engine.destroy();
+    closed.engine?.setVisible(false);
+    closed.engine?.destroy();
 
     if (wasActive) this.activeTabId = null;
 
@@ -128,23 +135,23 @@ export class TabManager {
 
   navigateActive(url: string): void {
     const tab = this.activeTab();
-    if (tab) void tab.engine.navigate(url);
+    if (tab) this.navigateTab(tab, url);
   }
 
   goBack(): void {
-    this.activeTab()?.engine.goBack();
+    this.activeTab()?.engine?.goBack();
   }
 
   goForward(): void {
-    this.activeTab()?.engine.goForward();
+    this.activeTab()?.engine?.goForward();
   }
 
   reload(): void {
-    this.activeTab()?.engine.reload();
+    this.activeTab()?.engine?.reload();
   }
 
   stop(): void {
-    this.activeTab()?.engine.stop();
+    this.activeTab()?.engine?.stop();
   }
 
   onChange(listener: TabManagerListener): () => void {
@@ -157,8 +164,8 @@ export class TabManager {
     this.destroyed = true;
     for (const tab of this.tabs) {
       tab.unsubscribe();
-      tab.engine.setVisible(false);
-      tab.engine.destroy();
+      tab.engine?.setVisible(false);
+      tab.engine?.destroy();
     }
     this.tabs.length = 0;
     this.activeTabId = null;
@@ -167,6 +174,36 @@ export class TabManager {
 
   private activeTab(): ManagedTab | undefined {
     return this.tabs.find((tab) => tab.id === this.activeTabId);
+  }
+
+  private loadPendingTab(tab: ManagedTab): void {
+    if (tab.pendingInitialNavigation) this.navigateTab(tab, tab.state.url);
+  }
+
+  /** Restored background tabs stay metadata-only until the user selects them. */
+  private ensureEngine(tab: ManagedTab): void {
+    if (tab.engine) return;
+    const engine = this.createEngine();
+    try {
+      engine.attach(this.window, this.browserChromeHeight);
+      engine.setVisible(false);
+      tab.unsubscribe = engine.onStateChange((state) => {
+        if (this.destroyed || !this.tabs.includes(tab)) return;
+        tab.state = state;
+        this.emit();
+      });
+      tab.state = { ...engine.getState(), url: tab.state.url || engine.getState().url };
+      tab.engine = engine;
+    } catch (error) {
+      engine.destroy();
+      throw error;
+    }
+  }
+
+  private navigateTab(tab: ManagedTab, url: string): void {
+    tab.pendingInitialNavigation = false;
+    if (!tab.engine) throw new Error('Cannot navigate a tab before its engine is created.');
+    void tab.engine.navigate(url);
   }
 
   private emit(): void {

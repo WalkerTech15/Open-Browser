@@ -6,6 +6,7 @@ const loadingBar = document.getElementById('loading-bar') as HTMLDivElement;
 const errorBanner = document.getElementById('error-banner') as HTMLDivElement;
 const tabList = document.getElementById('tab-list') as HTMLDivElement;
 const newTabButton = document.getElementById('new-tab-button') as HTMLButtonElement;
+const historyButton = document.getElementById('history-button') as HTMLButtonElement;
 
 let addressHasFocus = false;
 let focusAddressAfterTabCreation = false;
@@ -115,3 +116,4 @@ window.openBrowser.onState((state) => {
 });
 
 window.openBrowser.onTabs(renderTabs);
+historyButton.addEventListener('click', () => window.openBrowser.showHistory());

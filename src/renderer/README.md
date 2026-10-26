@@ -6,8 +6,9 @@ The toolbar UI. Runs as a sandboxed, no-Node Chromium renderer process (see
 
 - `layout/index.html` — the page shell and toolbar markup.
 - `styles/styles.css` — styling.
-- `components/toolbar.ts` — wires the toolbar DOM to `window.openBrowser`
-  and renders incoming `NavigationState` updates. Currently the only
+- `components/toolbar.ts` — wires toolbar controls to `window.openBrowser`
+  and renders navigation/tab updates; the History button opens a native menu.
+  Currently the only
   component; the folder exists so more can be added without reorganizing.
 - `state/global.d.ts` — ambient typing for `window.openBrowser`.
 

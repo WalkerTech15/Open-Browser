@@ -8,7 +8,7 @@ if the underlying engine (Chromium/Gecko) changed.
 - `navigation/` — pure, Electron-free logic for turning address-bar input
   into a safe URL or a search query. Implemented; see `docs/SECURITY.md` for
   why this file is the main navigation-safety control.
-- `tabs/` — in-memory tab state and active-tab selection; see `tabs/README.md`.
-- `sessions/` — reserved for profile/session persistence. Not implemented.
+- `tabs/` — live tab state and active-tab selection; see `tabs/README.md`.
+- `sessions/` — local history and restorable-tab data; see `sessions/README.md`.
 
 See `docs/ARCHITECTURE.md` for the full picture.

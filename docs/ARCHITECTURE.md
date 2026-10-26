@@ -19,9 +19,10 @@ what's implemented vs. planned see `docs/ROADMAP.md`.
 │       │      the ONLY ipcMain listeners — validated, sender-scoped                            │
 │       │                                                                                      │
 │       └─ src/core/browser/BrowserWindowController.ts                                         │
-│              owns one window's TabManager; pushes tab/navigation state over IPC               │
+│              owns one window's TabManager; persists tabs/history and pushes state over IPC    │
 │                     │                                                                        │
-│                     └─ src/core/tabs/TabManager.ts (one engine per tab; one visible)          │
+│                     └─ src/core/tabs/TabManager.ts (engines created on demand; one visible)   │
+│                     └─ src/core/sessions/SessionStore.ts (local JSON in app userData)          │
 │                     │                                                                        │
 │                     ▼                                                                        │
 │              src/engines/interface/BrowserEngine.ts  (the contract)                          │
@@ -61,18 +62,23 @@ narrow `window.openBrowser` API the preload script exposes. See
 bundler, so no runtime `import`/`export` in these files.
 
 **Core (`src/core/`)** holds browsing concepts that don't depend on which
-engine is running: `browser/` (window-level wiring), `tabs/` (in-memory tab
-collection and active selection), and `navigation/` (interpreting address-bar
-input). `sessions/` remains reserved for future persistence. Nothing here imports Electron's UI
-APIs directly except where it legitimately needs a `BrowserWindow` handle
-(`BrowserWindowController`); `navigation/` is pure and engine-free by
-design, which is also why it's unit-tested directly.
+engine is running: `browser/` (window-level wiring), `tabs/` (tab collection
+and active selection), `sessions/` (local tab/history persistence), and
+`navigation/` (interpreting address-bar input). `SessionStore` uses Node's
+filesystem APIs in the trusted main process; it stores versioned JSON under
+Electron's per-install `userData` directory. It stores URLs and visit times,
+not page contents, cookies, or URL-embedded credentials. Chromium separately
+uses its default session for site cookies and storage. The user can clear
+history and the saved restore snapshot together. `navigation/` remains pure and
+engine-free, which is why it is unit-tested directly.
 
 **Engine abstraction (`src/engines/`)** exists so the rendering engine is
 swappable. `interface/BrowserEngine.ts` is the contract (attach, visibility,
-navigation, history controls, and state). Each tab owns one engine instance;
-switching hides the previous view with `setVisible(false)` and shows the
-selected view. The hidden page remains alive. `chromium/` is the only
+navigation, history controls, and state). A tab gets an engine when first
+opened or selected from a restored session. Switching hides the previous view
+with `setVisible(false)` and shows the selected view; created pages remain
+alive while their tabs remain open. Inactive restored tabs keep metadata only,
+avoiding native view creation until first selection. `chromium/` is the only
 implementation today, built on Electron's `WebContentsView`. **Future
 Gecko work belongs in `src/engines/gecko/`**, implementing the same
 interface — nothing in `core/` or `main/` should need to change for that to
@@ -106,3 +112,14 @@ main window and the Chromium engine need the identical policy object).
 5. `ChromiumEngine` loads it in that tab's `WebContentsView` and reports state
    through `TabManager` and the controller. The controller pushes active
    navigation state and the tab list over `nav:state` and `tabs:state`.
+
+## Session persistence
+
+At startup, the main process reads `browser-data.json` from
+`app.getPath('userData')`. The selected tab is loaded; other restored tabs keep
+their URL metadata and load when first selected. The main process records
+top-level navigations and writes history plus the open-tab snapshot atomically
+through a temporary file and rename. The preload exposes only fixed,
+sender-scoped history operations; website content views have no preload.
+Details and trade-offs are recorded in
+[`decisions/ADR-002-local-session-persistence.md`](decisions/ADR-002-local-session-persistence.md).

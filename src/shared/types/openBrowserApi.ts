@@ -17,4 +17,5 @@ export interface OpenBrowserApi {
   activateTab(tabId: string): void;
   closeTab(tabId: string): void;
   onTabs(listener: (state: BrowserTabsState) => void): () => void;
+  showHistory(): void;
 }

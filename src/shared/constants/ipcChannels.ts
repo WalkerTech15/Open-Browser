@@ -14,5 +14,6 @@ export const IpcChannel = {
   NewTab: 'tabs:new',
   ActivateTab: 'tabs:activate',
   CloseTab: 'tabs:close',
-  TabsState: 'tabs:state'
+  TabsState: 'tabs:state',
+  HistoryOpen: 'history:open'
 } as const;

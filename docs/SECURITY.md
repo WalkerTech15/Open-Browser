@@ -47,12 +47,12 @@ duplicated `webPreferences` object literals.
 
 ## IPC boundary — Implemented
 
-All renderer↔main communication goes through exactly six named channels
-(`src/shared/constants/ipcChannels.ts`): `navigate`, `back`, `forward`,
-`reload`, `stop` (renderer→main), `state` (main→renderer). There is no
-generic `ipcRenderer.invoke` passthrough and no dynamic channel names.
+All renderer↔main communication goes through eleven named channels in
+`src/shared/constants/ipcChannels.ts`: navigation and tab commands, state
+updates, and one fixed command to show the native history menu. There is no
+generic IPC passthrough and no dynamic channel names.
 
-- `src/main/security/preload.ts` exposes only these six operations via
+- `src/main/security/preload.ts` exposes only fixed typed operations via
   `contextBridge.exposeInMainWorld`. It does not expose `ipcRenderer`
   itself, Node APIs, or anything else.
 - `src/main/security/ipcHandlers.ts` is the only place `ipcMain.on` is
@@ -67,6 +67,14 @@ generic `ipcRenderer.invoke` passthrough and no dynamic channel names.
 
 **Partial:** payload validation at the IPC layer is minimal (type-only) —
 the real safety net is the navigation-target validation described next.
+
+History data is written only by the trusted main process to the app's local
+`userData` directory. The stored schema accepts only HTTP(S) URLs, strips
+URL-embedded usernames and passwords, and stores visit timestamps. It does
+not encrypt the history file, inspect query-string secrets, or store page
+contents/cookies. History has no time-based expiry; the user can clear it
+along with the saved tab set from the toolbar. Atomic replacement protects
+against a partial JSON write, and malformed data is ignored with a warning.
 
 ## Navigation validation — Implemented
 

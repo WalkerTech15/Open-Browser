@@ -4,7 +4,8 @@
 
 A single-window, Chromium-only browser with a classic horizontal tab strip.
 Tabs can be created, switched, and closed. Pages stay alive while their tabs
-are inactive. There is no persistence, profiles, or extensions.
+are inactive. Local history and automatic tab restoration are implemented.
+Profiles and extensions are not implemented.
 
 ## Implemented
 
@@ -13,6 +14,10 @@ are inactive. There is no persistence, profiles, or extensions.
   inactive view without destroying its page (`src/core/tabs/TabManager.ts`)
 - Address-bar input resolution (URL vs. search) — `src/core/navigation/`
 - Back / forward / reload / stop
+- Local browsing history with no time-based expiry and automatic tab restore
+- Inactive restored tabs load only when selected
+- The native History menu offers a confirmed action to clear history and saved
+  restore tabs; current pages stay open
 - Loading and error states surfaced in the toolbar
 - Hardened renderer settings (context isolation, no Node integration,
   sandboxing) shared across every webContents
@@ -21,8 +26,6 @@ are inactive. There is no persistence, profiles, or extensions.
 
 ## Planned (next milestones, roughly in order)
 
-- **Sessions** — persisted browsing session/profile data (history, per-profile
-  storage partitioning); design home is `src/core/sessions/`
 - **Profiles** — multiple isolated user identities in one install
 - **Workspaces** — grouping tabs/sessions for different contexts
 - **Privacy controls** — tracker/ad blocking, a real Content-Security-Policy,

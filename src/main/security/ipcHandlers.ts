@@ -51,6 +51,10 @@ export function registerNavigationIpcHandlers(): void {
     if (!isTabId(tabId)) return;
     getBrowserWindowController(event.sender.id)?.closeTab(tabId);
   });
+
+  ipcMain.on(IpcChannel.HistoryOpen, (event) => {
+    getBrowserWindowController(event.sender.id)?.showHistoryMenu();
+  });
 }
 
 function isTabId(value: unknown): value is string {

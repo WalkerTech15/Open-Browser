@@ -4,6 +4,10 @@ import type { BrowserWindow } from 'electron';
 import { BrowserWindowController } from '../../src/core/browser/BrowserWindowController';
 import type { BrowserEngine } from '../../src/engines/interface/BrowserEngine';
 import type { NavigationState, NavigationStateListener } from '../../src/shared/types/navigationState';
+import * as fs from 'node:fs/promises';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import { SessionStore } from '../../src/core/sessions/SessionStore';
 
 /**
  * Regression coverage for "TypeError: Object has been destroyed" crashes
@@ -26,7 +30,10 @@ function createFakeEngine(): {
     name: 'fake',
     attach: () => {},
     setVisible: () => {},
-    navigate: async () => {},
+    navigate: async (url) => {
+      state.url = url;
+      listener?.(state);
+    },
     goBack: () => {},
     goForward: () => {},
     reload: () => {},
@@ -133,4 +140,27 @@ test('BrowserWindowController: a late engine state change after close does not t
   // window was already closed.
   assert.doesNotThrow(() => fake.emitStateChange());
   assert.equal(fakeWindow.sentMessageCount(), sentBeforeClose);
+});
+
+test('BrowserWindowController: persists navigation history and the active tab snapshot', async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'open-browser-controller-'));
+  try {
+    const store = new SessionStore(path.join(directory, 'browser-data.json'));
+    await store.load();
+    const fake = createFakeEngine();
+    const fakeWindow = createFakeWindow();
+    const controller = new BrowserWindowController(fakeWindow.window, () => fake.engine, store);
+    controller.handleNavigate('https://example.com/path');
+    await store.flush();
+
+    assert.deepEqual(store.snapshot().tabs, ['https://example.com/path']);
+    assert.ok(store.history().some((entry) => entry.url === 'https://example.com/path'));
+
+    await controller.clearHistoryAndSession();
+    assert.deepEqual(store.snapshot().tabs, []);
+    assert.deepEqual(store.history(), []);
+    fakeWindow.close();
+  } finally {
+    await fs.rm(directory, { recursive: true, force: true });
+  }
 });

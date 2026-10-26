@@ -25,7 +25,7 @@ Sources: `VISION.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `d
 
 ## 1. Product scope
 
-**Current prototype.** An Electron, Chromium-only, single-window desktop browser with classic horizontal tabs, address-bar navigation (URL or search), back/forward/reload/stop, loading and error states, hardened renderer settings, a narrow validated IPC boundary, and a Windows CI build that produces an unsigned installer artifact (`docs/ROADMAP.md` → Implemented; `README.md` → Project status). Tabs are in-memory and each owns one engine/view; this does not define V1 scope.
+**Current prototype.** An Electron, Chromium-only, single-window desktop browser with classic horizontal tabs, address-bar navigation (URL or search), back/forward/reload/stop, loading and error states, hardened renderer settings, a narrow validated IPC boundary, and a Windows CI build that produces an unsigned installer artifact (`docs/ROADMAP.md` → Implemented; `README.md` → Project status). Local session storage restores tab URLs and history; inactive restored tabs create their engine only when selected. Once created, each tab keeps its page alive while open. This does not define V1 scope.
 
 **Product intent.** An open-source, privacy-first adaptive browser: simple by default, powerful when needed, privacy-first, local-first, secure by architecture, fast on low-end hardware, comfortable with many tabs, highly customizable, workspace-oriented, open-source and transparent (`VISION.md` → Purpose, Product philosophy).
 
@@ -54,7 +54,9 @@ Sources: `VISION.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `d
 
 ## 4. Profiles
 
-**Current prototype.** None. No persistence, no profiles (`docs/ROADMAP.md` → Current status).
+**Current prototype.** No user-selectable profiles or per-profile isolation.
+The current app-wide tab and history data is persisted as described in §5;
+this is not profile storage.
 
 **Established constraints.**
 - Profiles are "multiple isolated user identities in one install" (`docs/ROADMAP.md` → Planned).
@@ -72,17 +74,23 @@ Sources: `VISION.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `d
 
 ## 5. Sessions
 
-**Current prototype.** None; `src/core/sessions/` is a placeholder.
+**Current prototype.** The app restores the previous tab URLs automatically
+and stores HTTP(S) browsing history locally until the user clears it. The
+selected page's engine and page load at startup; inactive restored tabs keep
+only their metadata until selected, when their engine is created and page
+loaded. The toolbar's confirmed Clear history action removes history and
+saved restore tabs together, while leaving current pages open. See ADR-002.
 
 **Established constraints.**
-- Sessions are "persisted browsing session/profile data (history, per-profile storage partitioning)" (`docs/ROADMAP.md` → Planned).
+- Sessions are persisted browsing/session data; per-profile storage partitioning remains planned (`docs/ROADMAP.md`).
 - Startup should restore tab metadata first and load only what is necessary (`VISION.md` → Performance direction).
 - Users must be able to delete and export their data (`VISION.md`; `AI_WORKFLOW.md` → Privacy rules).
 
-**Not defined.**
-- OQ-04: Storage format and location.
-- OQ-05: Whether "session" means a profile's persisted state, a restorable set of tabs, or both.
-- ND-05: Retention period for history and the default for restoring tabs after restart.
+**Resolved for the current prototype by ADR-002.** Session means a local
+restorable tab set plus history; storage is versioned JSON in Electron's
+`userData` directory; tabs restore automatically; history remains until
+cleared, and clearing also removes the saved tab set. This does not decide
+whether sessions, history export, or any of these behaviors belong in V1.
 
 ## 6. Workspaces
 
@@ -101,7 +109,7 @@ Sources: `VISION.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `d
 
 ## 7. Tabs and tab lifecycle
 
-**Current prototype.** Classic horizontal tabs are implemented in memory. `TabManager` creates one `BrowserEngine` per tab. Activating a tab hides the old view and shows the selected view; it does not destroy the old page. Closing the final tab creates a fresh start tab. This milestone choice does not establish the product-wide default layout or V1 inclusion.
+**Current prototype.** Classic horizontal tabs are implemented. `TabManager` creates an engine when a tab is first opened or selected from a restored session. Activating a tab hides the old view and shows the selected view; it does not destroy an existing page. Closing the final tab creates a fresh start tab. This milestone choice does not establish the product-wide default layout or V1 inclusion.
 
 **Established constraints.**
 - The browser must stay responsive with many tabs by adapting to memory, CPU, GPU, battery, and thermal capacity.
@@ -114,7 +122,7 @@ Sources: `VISION.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `d
 - OQ-10: Transition triggers and thresholds between states.
 - OQ-11: Whether the list of four states is final (the source says "such as").
 - ND-06: Required tab-count targets and memory budgets, if any.
-- The `BrowserEngine` tab-visibility contract and one-engine-per-tab approach were decided in [`ADR-001`](decisions/ADR-001-tab-engine-visibility.md). This resolves OQ-12 for the current implementation.
+- The `BrowserEngine` tab-visibility contract and lazy engine creation for inactive restored tabs were decided in [`ADR-001`](decisions/ADR-001-tab-engine-visibility.md). This resolves OQ-12 for the current implementation.
 
 ## 8. Classic / Vertical / Hybrid layouts
 
@@ -173,7 +181,7 @@ Sources: `VISION.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `d
 
 ## 13. Privacy model
 
-**Current prototype.** No telemetry, accounts, sync, or AI. Roadmap lists telemetry and AI as "explicitly future" (`docs/ROADMAP.md`). No browsing data is persisted (`docs/ROADMAP.md` → Current status).
+**Current prototype.** No telemetry, accounts, sync, or AI. Roadmap lists telemetry and AI as "explicitly future" (`docs/ROADMAP.md`). Open tab URLs and browsing history are persisted locally as described in §5; there is no cloud transfer in this feature.
 
 **Standing project constraints** (`VISION.md` → Privacy and trust; `AI_WORKFLOW.md` → Privacy rules). These govern all development work today. They are **not yet confirmed V1 release requirements**: which of them are V1 gates depends on ND-01 (V1 scope) and ND-12 (V1 security scope), and several concern features that do not exist (accounts, sync, AI, telemetry), so they apply when those features are built.
 - User data belongs to the user. Prefer local processing and storage.
@@ -194,7 +202,7 @@ Sources: `VISION.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `d
 
 **Current prototype (`docs/SECURITY.md`).**
 - Three trust levels: main process (trusted), toolbar renderer (sandboxed, no Node, one narrow preload API), content view (untrusted, no preload).
-- Implemented: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` from one shared constant; six named IPC channels with sender-scoped handlers; navigation validation (only `http:` and `https:` load); no dynamic code execution.
+- Implemented: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` from one shared constant; eleven named IPC channels with sender-scoped handlers; navigation validation (only `http:` and `https:` load); no dynamic code execution.
 - **Missing** today: Content-Security-Policy, permission-request handling, download handling, custom TLS handling, signed updates. Payload validation at IPC is **Partial** (type-only).
 
 **Standing project constraint (which items are V1 gates depends on ND-12).** Preserve the controls above (`AI_WORKFLOW.md` → Security rules) and "least privilege, process isolation, site isolation, strict IPC, secure defaults, signed updates, dependency review, and honest security documentation" (`VISION.md` → Security direction). Treat websites, renderer content, downloads, extensions, themes, external APIs, sync servers, and AI responses as untrusted. Never run the browser as administrator. Do not weaken security to pass tests.
@@ -378,8 +386,8 @@ V1 membership is undecided (ND-01), so there are **no confirmed V1 acceptance cr
 - Where the user decides performance matters, measurements are recorded instead of claims (§20).
 
 **Sessions.** (Conditional V1 candidate; pending ND-01)
-- Data is persisted per the storage design resolved in OQ-04.
-- The user can delete and export it.
+- Data follows the storage design in ADR-002.
+- The user can delete and export it; export is not implemented in the current prototype.
 - Persistence follows the privacy rules in §13, and schema changes are versioned and tested (`docs/COLLABORATION.md` §23).
 
 **Profiles.** (Conditional V1 candidate; pending ND-01)
@@ -420,11 +428,11 @@ These requirements apply once the feature enters development; do not create empt
 ## 34. Open questions and decisions
 
 ### NEEDS USER DECISION
+There are 27 unresolved decisions; ND-05 is recorded below as resolved.
 - ND-01 V1 feature set
 - ND-02 V1 release criteria
 - ND-03 V1 non-goals
 - ND-04 Profile limits, naming, and deletion
-- ND-05 History retention and restore default
 - ND-06 Tab-count targets and memory budgets
 - ND-07 Definitions of Classic, Vertical, and Hybrid layouts
 - ND-08 Search-engine choice at first run
@@ -453,7 +461,10 @@ These requirements apply once the feature enters development; do not create empt
 - QV-01 Toolbar accessibility status (§28). Reclassified from OQ-43.
 
 ### OPEN QUESTION
-- OQ-01 to OQ-47 are listed inline in the sections above, except OQ-12 (resolved for the current implementation by ADR-001) and OQ-43 (reclassified as QV-01). This leaves 45 open questions. Section numbers: audiences (§1), profiles (§4), sessions (§5), workspaces (§6), tabs (§7), layouts (§8), search (§9), personalization (§10–12), privacy (§13), security (§14), ad/tracker (§16), sync (§17), restore (§18), AI (§19), performance (§20–21), developer (§23), import/export (§27), accessibility (§28), installer (§30), updates (§31).
+- OQ-01 to OQ-47 are listed inline in the sections above, except OQ-04, OQ-05, and OQ-12 (resolved for the current implementation by ADR-002 and ADR-001) and OQ-43 (reclassified as QV-01). This leaves 43 open questions. Section numbers: audiences (§1), profiles (§4), workspaces (§6), tabs (§7), layouts (§8), search (§9), personalization (§10–12), privacy (§13), security (§14), ad/tracker (§16), sync (§17), restore (§18), AI (§19), performance (§20–21), developer (§23), import/export (§27), accessibility (§28), installer (§30), updates (§31).
+
+### Resolved user decisions
+- ND-05 — History remains until the user clears it; startup restores tabs automatically. Clearing history also removes the saved tab set. Recorded in ADR-002. This does not decide V1 scope.
 
 ## Conflicts found with existing documents
 

@@ -103,6 +103,31 @@ test('TabManager routes navigation through the active engine only', () => {
   assert.equal(engines[1].lastNavigatedUrl(), START_URL);
 });
 
+test('TabManager restores only the active engine and creates background engines on selection', () => {
+  const { manager, engines } = createManager();
+  manager.restoreTabs(['https://one.example/', 'https://two.example/'], 0);
+
+  assert.deepEqual(manager.getTabsState().tabs.map((tab) => tab.url), [
+    'https://one.example/',
+    'https://two.example/'
+  ]);
+  assert.equal(engines.length, 1);
+  assert.equal(engines[0].lastNavigatedUrl(), 'https://one.example/');
+
+  manager.activateTab('tab-2');
+  assert.equal(engines.length, 2);
+  assert.equal(engines[1].lastNavigatedUrl(), 'https://two.example/');
+});
+
+test('closing an unselected restored tab does not create its engine', () => {
+  const { manager, engines } = createManager();
+  manager.restoreTabs(['https://one.example/', 'https://two.example/'], 0);
+
+  assert.equal(manager.closeTab('tab-2'), true);
+  assert.equal(engines.length, 1);
+  assert.deepEqual(manager.getTabsState().tabs.map((tab) => tab.url), ['https://one.example/']);
+});
+
 test('TabManager closes a tab once and selects its neighbor', () => {
   const { manager, engines } = createManager();
   const firstId = manager.createTab();
