@@ -19,7 +19,9 @@ what's implemented vs. planned see `docs/ROADMAP.md`.
 │       │      the ONLY ipcMain listeners — validated, sender-scoped                            │
 │       │                                                                                      │
 │       └─ src/core/browser/BrowserWindowController.ts                                         │
-│              glues one BrowserEngine to one window; pushes NavigationState over IPC          │
+│              owns one window's TabManager; pushes tab/navigation state over IPC               │
+│                     │                                                                        │
+│                     └─ src/core/tabs/TabManager.ts (one engine per tab; one visible)          │
 │                     │                                                                        │
 │                     ▼                                                                        │
 │              src/engines/interface/BrowserEngine.ts  (the contract)                          │
@@ -59,16 +61,18 @@ narrow `window.openBrowser` API the preload script exposes. See
 bundler, so no runtime `import`/`export` in these files.
 
 **Core (`src/core/`)** holds browsing concepts that don't depend on which
-engine is running: `browser/` (wiring a window to an engine),
-`navigation/` (interpreting address-bar input), and the reserved `tabs/` and
-`sessions/` folders for future work. Nothing here imports Electron's UI
+engine is running: `browser/` (window-level wiring), `tabs/` (in-memory tab
+collection and active selection), and `navigation/` (interpreting address-bar
+input). `sessions/` remains reserved for future persistence. Nothing here imports Electron's UI
 APIs directly except where it legitimately needs a `BrowserWindow` handle
 (`BrowserWindowController`); `navigation/` is pure and engine-free by
 design, which is also why it's unit-tested directly.
 
 **Engine abstraction (`src/engines/`)** exists so the rendering engine is
-swappable. `interface/BrowserEngine.ts` is the contract (navigate,
-back/forward, reload/stop, state, attach-to-window). `chromium/` is the only
+swappable. `interface/BrowserEngine.ts` is the contract (attach, visibility,
+navigation, history controls, and state). Each tab owns one engine instance;
+switching hides the previous view with `setVisible(false)` and shows the
+selected view. The hidden page remains alive. `chromium/` is the only
 implementation today, built on Electron's `WebContentsView`. **Future
 Gecko work belongs in `src/engines/gecko/`**, implementing the same
 interface — nothing in `core/` or `main/` should need to change for that to
@@ -97,7 +101,8 @@ main window and the Chromium engine need the identical policy object).
    `handleNavigate(input)`.
 4. The controller resolves it via `core/navigation/navigation.ts`
    (`resolveAddressInput`) into either a validated `http(s)://` URL or a
-   search-engine query URL, then calls `engine.navigate(url)`.
-5. `ChromiumEngine` loads it in its `WebContentsView` and reports state
-   changes back through the controller, which pushes `NavigationState` back
-   to the renderer over the `nav:state` channel.
+   search-engine query URL, then routes it to the active engine through
+   `TabManager`.
+5. `ChromiumEngine` loads it in that tab's `WebContentsView` and reports state
+   through `TabManager` and the controller. The controller pushes active
+   navigation state and the tab list over `nav:state` and `tabs:state`.

@@ -26,7 +26,7 @@ export function createMainWindow(): BrowserWindow {
     }
   });
 
-  new BrowserWindowController(window, new ChromiumEngine());
+  new BrowserWindowController(window, () => new ChromiumEngine());
 
   void window.loadFile(RENDERER_ENTRY);
 

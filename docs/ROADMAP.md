@@ -2,13 +2,15 @@
 
 ## Current status: prototype
 
-A single window, single tab, Chromium-only browser. You can type a URL or a
-search term, navigate, go back/forward, reload, and stop loading. No
-persistence, no profiles, no extensions.
+A single-window, Chromium-only browser with a classic horizontal tab strip.
+Tabs can be created, switched, and closed. Pages stay alive while their tabs
+are inactive. There is no persistence, profiles, or extensions.
 
 ## Implemented
 
 - Single-window Chromium browsing via `src/engines/chromium/ChromiumEngine.ts`
+- Classic horizontal tabs with one Chromium view per tab; switching hides the
+  inactive view without destroying its page (`src/core/tabs/TabManager.ts`)
 - Address-bar input resolution (URL vs. search) — `src/core/navigation/`
 - Back / forward / reload / stop
 - Loading and error states surfaced in the toolbar
@@ -19,8 +21,6 @@ persistence, no profiles, no extensions.
 
 ## Planned (next milestones, roughly in order)
 
-- **Tabs** — multiple `BrowserWindowController`-style instances per window;
-  design home is `src/core/tabs/` (currently just a placeholder README)
 - **Sessions** — persisted browsing session/profile data (history, per-profile
   storage partitioning); design home is `src/core/sessions/`
 - **Profiles** — multiple isolated user identities in one install
@@ -49,6 +49,6 @@ design pass before starting: extension support, a settings UI
 ## Non-goals for the current milestone
 
 These are deliberately out of scope right now, not forgotten:
-multi-tab UI, profiles/workspaces UI, Gecko, auto-updates, telemetry, AI
+profiles/workspaces UI, Gecko, auto-updates, telemetry, AI
 features, code signing, publishing credentials, macOS/Linux packaging,
 website deployment.

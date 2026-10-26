@@ -25,7 +25,7 @@ Sources: `VISION.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `d
 
 ## 1. Product scope
 
-**Current prototype.** An Electron, Chromium-only, single-window, single-tab desktop browser with address-bar navigation (URL or search), back/forward/reload/stop, loading and error states, hardened renderer settings, a narrow validated IPC boundary, and a Windows CI build that produces an unsigned installer artifact (`docs/ROADMAP.md` → Implemented; `README.md` → Project status).
+**Current prototype.** An Electron, Chromium-only, single-window desktop browser with classic horizontal tabs, address-bar navigation (URL or search), back/forward/reload/stop, loading and error states, hardened renderer settings, a narrow validated IPC boundary, and a Windows CI build that produces an unsigned installer artifact (`docs/ROADMAP.md` → Implemented; `README.md` → Project status). Tabs are in-memory and each owns one engine/view; this does not define V1 scope.
 
 **Product intent.** An open-source, privacy-first adaptive browser: simple by default, powerful when needed, privacy-first, local-first, secure by architecture, fast on low-end hardware, comfortable with many tabs, highly customizable, workspace-oriented, open-source and transparent (`VISION.md` → Purpose, Product philosophy).
 
@@ -46,7 +46,7 @@ Sources: `VISION.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `d
 
 ## 3. V1 non-goals
 
-**Established non-goals for the *current milestone*** (`docs/ROADMAP.md`): multi-tab UI, profiles/workspaces UI, Gecko, auto-updates, telemetry, AI features, code signing, publishing credentials, macOS/Linux packaging, website deployment.
+**Established non-goals for the *current milestone*** (`docs/ROADMAP.md`): profiles/workspaces UI, Gecko, auto-updates, telemetry, AI features, code signing, publishing credentials, macOS/Linux packaging, website deployment.
 
 **V1 non-goals.** Not defined. Several items above are also "Planned", so the current-milestone list cannot simply be reused as the V1 list.
 
@@ -101,7 +101,7 @@ Sources: `VISION.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `d
 
 ## 7. Tabs and tab lifecycle
 
-**Current prototype.** Single tab only. Multi-tab design home is `src/core/tabs/` (placeholder). Multiple window/engine instances per window is the roadmap's stated approach (`docs/ROADMAP.md` → Planned).
+**Current prototype.** Classic horizontal tabs are implemented in memory. `TabManager` creates one `BrowserEngine` per tab. Activating a tab hides the old view and shows the selected view; it does not destroy the old page. Closing the final tab creates a fresh start tab. This milestone choice does not establish the product-wide default layout or V1 inclusion.
 
 **Established constraints.**
 - The browser must stay responsive with many tabs by adapting to memory, CPU, GPU, battery, and thermal capacity.
@@ -114,7 +114,7 @@ Sources: `VISION.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `d
 - OQ-10: Transition triggers and thresholds between states.
 - OQ-11: Whether the list of four states is final (the source says "such as").
 - ND-06: Required tab-count targets and memory budgets, if any.
-- OQ-12: How the `BrowserEngine` contract grows to support multiple tabs. This may be an ADR-level decision (engine abstraction, `docs/COLLABORATION.md` §12).
+- The `BrowserEngine` tab-visibility contract and one-engine-per-tab approach were decided in [`ADR-001`](decisions/ADR-001-tab-engine-visibility.md). This resolves OQ-12 for the current implementation.
 
 ## 8. Classic / Vertical / Hybrid layouts
 
@@ -371,7 +371,7 @@ V1 membership is undecided (ND-01), so there are **no confirmed V1 acceptance cr
 - Documentation is updated and known limitations are recorded.
 
 **Tabs.** (Conditional V1 candidate; pending ND-01)
-- More than one tab can be opened, switched, and closed. *The exact UI is OQ-12 and unspecified.*
+- More than one tab can be opened, switched, and closed. The current prototype uses a classic horizontal strip per the user's milestone choice; that choice does not decide the general product default layout (OQ-13) or V1 membership.
 - Each tab's content view keeps the hardened settings and has no preload.
 - Navigation validation still applies to every tab.
 - Tab lifecycle states, if included, follow definitions that resolve OQ-09 and OQ-10.
@@ -453,11 +453,11 @@ These requirements apply once the feature enters development; do not create empt
 - QV-01 Toolbar accessibility status (§28). Reclassified from OQ-43.
 
 ### OPEN QUESTION
-- OQ-01 to OQ-47 are listed inline in the sections above, except OQ-43, which was reclassified as QV-01. Section numbers: audiences (§1), profiles (§4), sessions (§5), workspaces (§6), tabs (§7), layouts (§8), search (§9), personalization (§10–12), privacy (§13), security (§14), ad/tracker (§16), sync (§17), restore (§18), AI (§19), performance (§20–21), developer (§23), import/export (§27), accessibility (§28), installer (§30), updates (§31).
+- OQ-01 to OQ-47 are listed inline in the sections above, except OQ-12 (resolved for the current implementation by ADR-001) and OQ-43 (reclassified as QV-01). This leaves 45 open questions. Section numbers: audiences (§1), profiles (§4), sessions (§5), workspaces (§6), tabs (§7), layouts (§8), search (§9), personalization (§10–12), privacy (§13), security (§14), ad/tracker (§16), sync (§17), restore (§18), AI (§19), performance (§20–21), developer (§23), import/export (§27), accessibility (§28), installer (§30), updates (§31).
 
 ## Conflicts found with existing documents
 
 1. `VISION.md` says detailed behavior belongs in `SPECIFICATION.md`, and this file now exists as a draft. It also says release criteria belong in `docs/ROADMAP.md`, which currently has none (ND-02).
-2. `README.md` ("Project status") claims integration coverage while its "Project structure" says `tests/integration/` is "reserved, not implemented", and `tests/README.md` says "None yet". The file `tests/integration/browserWindowController.test.ts` exists. This is documentation drift and not a requirement.
+2. Test documentation previously disagreed about whether integration tests existed. The README, test guide, and `tests/integration/browserWindowController.test.ts` now consistently describe controller lifecycle coverage using fakes.
 3. `docs/ROADMAP.md` lists "Privacy controls", including CSP and permission handling, as a planned item, while `docs/SECURITY.md` labels those same items "Missing". These are consistent (both mean not built), but the roadmap does not say which are required for V1 (ND-12).
-4. `VISION.md` says the engine boundary should cover history, permissions, downloads, storage, extensions, and more. The current `BrowserEngine` contract (`docs/ARCHITECTURE.md`) covers only navigation, state, and attach. This is a gap, not a conflict (OQ-12).
+4. `VISION.md` says the engine boundary should eventually cover history, permissions, downloads, storage, extensions, and more. The current `BrowserEngine` contract covers tab visibility and navigation state/history controls only. The broader future boundary remains an open design question; ADR-001 resolves only the current tab-visibility need.

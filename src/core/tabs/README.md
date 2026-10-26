@@ -1,10 +1,10 @@
-# Tabs (reserved, not implemented)
+# Tabs
 
-This folder is reserved for multi-tab support. The current prototype is
-single-window, single-tab: `src/core/browser/BrowserWindowController.ts`
-manages exactly one engine per window.
+`TabManager` owns the tabs for one browser window. It creates one engine per
+tab, tracks which tab is active, and switches pages by hiding the inactive
+view. Hidden views stay alive, so switching tabs preserves page state.
 
-When tabs are implemented, this is where tab-collection state (which tabs
-are open, their order, the active tab) should live, separate from
-`core/browser` (one controller per surface) and `core/sessions` (persisted
-profile/session data). See `docs/ROADMAP.md`.
+`BrowserWindowController` connects tab actions to the toolbar IPC API. This
+module owns only in-memory tab state; persistence, sleeping/discarding,
+profiles, and workspaces are separate future work. The architectural choice
+is recorded in [`docs/decisions/ADR-001-tab-engine-visibility.md`](../../../docs/decisions/ADR-001-tab-engine-visibility.md).

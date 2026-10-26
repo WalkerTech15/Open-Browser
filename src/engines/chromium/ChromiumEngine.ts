@@ -97,6 +97,10 @@ export class ChromiumEngine implements BrowserEngine {
     });
   }
 
+  setVisible(visible: boolean): void {
+    this.view?.setVisible(visible);
+  }
+
   private layout = (): void => {
     if (!this.window || !this.view || this.window.isDestroyed()) return;
     const bounds = this.window.getContentBounds();

@@ -37,4 +37,22 @@ export function registerNavigationIpcHandlers(): void {
   ipcMain.on(IpcChannel.Stop, (event) => {
     getBrowserWindowController(event.sender.id)?.stop();
   });
+
+  ipcMain.on(IpcChannel.NewTab, (event) => {
+    getBrowserWindowController(event.sender.id)?.createTab();
+  });
+
+  ipcMain.on(IpcChannel.ActivateTab, (event, tabId: unknown) => {
+    if (!isTabId(tabId)) return;
+    getBrowserWindowController(event.sender.id)?.activateTab(tabId);
+  });
+
+  ipcMain.on(IpcChannel.CloseTab, (event, tabId: unknown) => {
+    if (!isTabId(tabId)) return;
+    getBrowserWindowController(event.sender.id)?.closeTab(tabId);
+  });
+}
+
+function isTabId(value: unknown): value is string {
+  return typeof value === 'string' && /^tab-\d{1,8}$/.test(value);
 }

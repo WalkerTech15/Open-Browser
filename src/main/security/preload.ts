@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { NavigationState } from '../../shared/types/navigationState';
+import type { BrowserTabsState } from '../../shared/types/browserTabs';
 import type { OpenBrowserApi } from '../../shared/types/openBrowserApi';
 
 // SECURITY: a sandboxed preload script (sandbox: true) can only `require` a
@@ -13,7 +14,11 @@ const IpcChannel = {
   Forward: 'nav:forward',
   Reload: 'nav:reload',
   Stop: 'nav:stop',
-  State: 'nav:state'
+  State: 'nav:state',
+  NewTab: 'tabs:new',
+  ActivateTab: 'tabs:activate',
+  CloseTab: 'tabs:close',
+  TabsState: 'tabs:state'
 } as const;
 
 // SECURITY: this is the entire API surface exposed to every renderer. It is
@@ -39,6 +44,20 @@ const openBrowserApi: OpenBrowserApi = {
     const handler = (_event: Electron.IpcRendererEvent, state: NavigationState): void => listener(state);
     ipcRenderer.on(IpcChannel.State, handler);
     return () => ipcRenderer.removeListener(IpcChannel.State, handler);
+  },
+  newTab(): void {
+    ipcRenderer.send(IpcChannel.NewTab);
+  },
+  activateTab(tabId: string): void {
+    ipcRenderer.send(IpcChannel.ActivateTab, tabId);
+  },
+  closeTab(tabId: string): void {
+    ipcRenderer.send(IpcChannel.CloseTab, tabId);
+  },
+  onTabs(listener: (state: BrowserTabsState) => void): () => void {
+    const handler = (_event: Electron.IpcRendererEvent, state: BrowserTabsState): void => listener(state);
+    ipcRenderer.on(IpcChannel.TabsState, handler);
+    return () => ipcRenderer.removeListener(IpcChannel.TabsState, handler);
   }
 };
 

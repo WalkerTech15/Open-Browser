@@ -13,6 +13,9 @@ export interface BrowserEngine {
   /** Mounts the engine's content view into a window, below a toolbar of the given height. */
   attach(window: BrowserWindow, toolbarHeight: number): void;
 
+  /** Shows or hides this tab's content view without destroying its page state. */
+  setVisible(visible: boolean): void;
+
   navigate(url: string): Promise<void>;
   goBack(): void;
   goForward(): void;

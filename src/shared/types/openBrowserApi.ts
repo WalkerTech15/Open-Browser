@@ -1,4 +1,5 @@
 import type { NavigationState } from './navigationState';
+import type { BrowserTabsState } from './browserTabs';
 
 /**
  * The renderer-facing API exposed on `window.openBrowser` by the preload
@@ -12,4 +13,8 @@ export interface OpenBrowserApi {
   reload(): void;
   stop(): void;
   onState(listener: (state: NavigationState) => void): () => void;
+  newTab(): void;
+  activateTab(tabId: string): void;
+  closeTab(tabId: string): void;
+  onTabs(listener: (state: BrowserTabsState) => void): () => void;
 }

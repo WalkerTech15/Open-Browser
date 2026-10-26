@@ -25,6 +25,7 @@ function createFakeEngine(): {
   const engine: BrowserEngine = {
     name: 'fake',
     attach: () => {},
+    setVisible: () => {},
     navigate: async () => {},
     goBack: () => {},
     goForward: () => {},
@@ -99,7 +100,7 @@ test('BrowserWindowController: closing the window disposes the engine exactly on
   const fake = createFakeEngine();
   const fakeWindow = createFakeWindow();
 
-  new BrowserWindowController(fakeWindow.window, fake.engine);
+  new BrowserWindowController(fakeWindow.window, () => fake.engine);
   fakeWindow.close();
 
   assert.equal(fake.destroyCallCount(), 1);
@@ -109,25 +110,27 @@ test('BrowserWindowController: a late did-finish-load after close does not throw
   const fake = createFakeEngine();
   const fakeWindow = createFakeWindow();
 
-  new BrowserWindowController(fakeWindow.window, fake.engine);
+  new BrowserWindowController(fakeWindow.window, () => fake.engine);
+  const sentBeforeClose = fakeWindow.sentMessageCount();
   fakeWindow.close();
 
   // Simulates Electron firing the queued 'did-finish-load' callback after
   // the window was already closed — this is exactly the race that used to
   // throw "Object has been destroyed" from pushState().
   assert.doesNotThrow(() => fakeWindow.triggerDidFinishLoad());
-  assert.equal(fakeWindow.sentMessageCount(), 0);
+  assert.equal(fakeWindow.sentMessageCount(), sentBeforeClose);
 });
 
 test('BrowserWindowController: a late engine state change after close does not throw or send IPC', () => {
   const fake = createFakeEngine();
   const fakeWindow = createFakeWindow();
 
-  new BrowserWindowController(fakeWindow.window, fake.engine);
+  new BrowserWindowController(fakeWindow.window, () => fake.engine);
+  const sentBeforeClose = fakeWindow.sentMessageCount();
   fakeWindow.close();
 
   // Simulates an in-flight navigation's async callback resolving after the
   // window was already closed.
   assert.doesNotThrow(() => fake.emitStateChange());
-  assert.equal(fakeWindow.sentMessageCount(), 0);
+  assert.equal(fakeWindow.sentMessageCount(), sentBeforeClose);
 });

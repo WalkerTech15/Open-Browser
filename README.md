@@ -1,9 +1,9 @@
 # Open-Browser
 An open-source, privacy-first, adaptive browser focused on performance, customization, and user control.
 
-This is an early prototype: a single window, single tab, Chromium-only
-browser built on Electron. See `docs/ROADMAP.md` for what's implemented vs.
-planned.
+This is an early prototype: a single-window, Chromium-only browser built on
+Electron, with classic horizontal tabs. See `docs/ROADMAP.md` for what's
+implemented vs. planned.
 
 ## Project status
 
@@ -11,13 +11,15 @@ The current prototype provides:
 
 - A Windows-focused Electron desktop shell
 - A Chromium web-content view
+- Classic horizontal tabs: create, switch, and close tabs while keeping
+  inactive pages alive
 - Address-bar navigation with search fallback
 - Back, forward, reload, and stop controls
 - Hardened renderer settings and a narrow preload API
 - Unit and integration coverage for navigation and window lifecycle behavior
 - A GitHub Actions workflow that builds a Windows installer artifact
 
-Profiles, multiple tabs, workspaces, Gecko support, downloads, permissions,
+Profiles, sessions, workspaces, Gecko support, downloads, permissions,
 automatic updates, and advanced privacy controls are not implemented yet.
 
 ## Getting started
@@ -27,7 +29,7 @@ Requires Node.js 20+ and npm.
 ```sh
 npm ci          # install dependencies (use this, not `npm install`, for a clean/reproducible install)
 npm run build   # compile TypeScript to dist/
-npm test        # build, then run the unit tests
+npm test        # build, then run unit and integration tests
 npm start       # build, then launch the app
 npm run dist    # build a Windows installer into release/
 ```
@@ -46,7 +48,7 @@ src/
 ├── core/        Engine-agnostic browsing logic
 │   ├── browser/       wires one engine to one window
 │   ├── navigation/     address-bar input → safe URL or search
-│   ├── tabs/           reserved, not implemented
+│   ├── tabs/           in-memory tab collection and active-tab selection
 │   └── sessions/        reserved, not implemented
 ├── engines/      The swappable rendering-engine abstraction
 │   ├── interface/      the BrowserEngine contract
@@ -59,7 +61,7 @@ src/
 
 tests/
 ├── unit/         node:test tests with no Electron runtime needed
-└── integration/  reserved, not implemented
+└── integration/  controller lifecycle tests
 
 docs/
 ├── ARCHITECTURE.md   how the pieces fit together, with a diagram
