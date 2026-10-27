@@ -2,43 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
-import type { DownloadItem, Session, WebContents } from 'electron';
-import { denyWebsitePermissionsByDefault } from '../../src/services/permissions/denyByDefault';
+import type { DownloadItem, Session } from 'electron';
 import { configureDownloadSaveDialogs, downloadSaveDialogOptions } from '../../src/services/downloads/saveDialog';
-
-test('website permission requests and checks are denied by default', () => {
-  const handlers: {
-    request?: Parameters<Session['setPermissionRequestHandler']>[0];
-    check?: Parameters<Session['setPermissionCheckHandler']>[0];
-    device?: Parameters<Session['setDevicePermissionHandler']>[0];
-  } = {};
-  const session = {
-    setPermissionRequestHandler: (handler: Parameters<Session['setPermissionRequestHandler']>[0]) => { handlers.request = handler; },
-    setPermissionCheckHandler: (handler: Parameters<Session['setPermissionCheckHandler']>[0]) => { handlers.check = handler; },
-    setDevicePermissionHandler: (handler: Parameters<Session['setDevicePermissionHandler']>[0]) => { handlers.device = handler; }
-  } as unknown as Session;
-
-  denyWebsitePermissionsByDefault(session);
-
-  let granted: boolean | undefined;
-  handlers.request?.(
-    {} as WebContents,
-    'media',
-    (allowed) => { granted = allowed; },
-    {} as Parameters<NonNullable<typeof handlers.request>>[3]
-  );
-  assert.equal(granted, false);
-  assert.equal(
-    handlers.check?.(
-      {} as WebContents,
-      'notifications',
-      'https://example.com',
-      {} as Parameters<NonNullable<typeof handlers.check>>[3]
-    ),
-    false
-  );
-  assert.equal(handlers.device?.({ deviceType: 'usb', origin: 'https://example.com', device: {} } as Parameters<NonNullable<typeof handlers.device>>[0]), false);
-});
 
 test('download suggestions stay directly inside Downloads for unsafe and cross-platform filenames', () => {
   const downloadsDirectory = join(tmpdir(), 'open-browser-download-policy-test');

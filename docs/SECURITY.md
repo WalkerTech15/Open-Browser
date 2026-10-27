@@ -127,15 +127,23 @@ for websites opened in content views; those remain untrusted and need separate
 privacy/security controls. Whether toolbar CSP is a V1 release gate remains
 undecided under ND-12 in `docs/SPECIFICATION.md`.
 
-## Permission requests (camera/mic/geolocation/notifications) — Denied by default
+## Permission requests — Temporary prompts
 
-Every Chromium session installs permission-request, permission-check, and
-device-permission handlers that deny access. This avoids granting access while
-there is no user-facing permission manager. Camera, microphone, geolocation,
-notifications, screen capture, and device access are unavailable in the
-current prototype.
-User-configurable prompts and per-site grants remain planned work; see
-`src/services/permissions/README.md` and `docs/ROADMAP.md`.
+Each Chromium session handles both permission checks and requests. Eligible
+camera, microphone, location, and notification requests from the active
+top-level page show a native Block / Allow once dialog with the requesting
+origin; Block is the default. Only HTTPS and loopback HTTP origins are eligible.
+Unsupported permissions, device access, background tabs, child frames, and
+requests without a reliable origin are denied. There is no persistent allowlist.
+
+Media and location approval applies to that request. An already active camera,
+microphone, or location stream/watch can continue after a tab switch until the
+site stops it or the tab closes; the prototype does not yet show a capture
+indicator. Notification access lasts while that tab remains active on the
+current page, and is revoked when it navigates, becomes inactive, or closes.
+Pending approvals are denied if the page changes or closes. The operating system
+may still deny access after the browser approves a request. See
+`docs/decisions/ADR-005-temporary-permissions.md` for the boundaries.
 
 ## Downloads — Native save prompt configured
 

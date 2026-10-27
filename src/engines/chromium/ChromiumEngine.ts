@@ -1,13 +1,13 @@
-import { app, WebContentsView } from 'electron';
+import { app, dialog, WebContentsView } from 'electron';
 import type { BrowserWindow } from 'electron';
 import type { BrowserEngine } from '../interface/BrowserEngine';
 import type { NavigationState, NavigationStateListener } from '../../shared/types/navigationState';
 import { isNavigableUrl } from '../../core/navigation/navigation';
 import { SECURE_WEB_PREFERENCES } from '../../shared/constants/secureWebPreferences';
-import { denyWebsitePermissionsByDefault } from '../../services/permissions/denyByDefault';
+import { PermissionPolicy } from '../../services/permissions/permissionPolicy';
 import { configureDownloadSaveDialogs } from '../../services/downloads/saveDialog';
 
-const configuredSessions = new WeakSet<object>();
+const configuredSessions = new WeakMap<Electron.Session, PermissionPolicy>();
 
 const ABORTED_ERROR_CODE = -3; // ERR_ABORTED, expected when the user hits Stop.
 
@@ -43,6 +43,7 @@ export class ChromiumEngine implements BrowserEngine {
   private toolbarHeight = 0;
   private listeners = new Set<NavigationStateListener>();
   private lastRequestedUrl = '';
+  private permissionTracking: ReturnType<PermissionPolicy['track']> | null = null;
 
   private state: NavigationState = {
     url: '',
@@ -65,11 +66,25 @@ export class ChromiumEngine implements BrowserEngine {
     this.view = view;
 
     const browserSession = view.webContents.session;
-    if (!configuredSessions.has(browserSession)) {
-      denyWebsitePermissionsByDefault(browserSession);
+    let permissionPolicy = configuredSessions.get(browserSession);
+    if (!permissionPolicy) {
+      permissionPolicy = new PermissionPolicy(browserSession, async (owner, request) => {
+        const result = await dialog.showMessageBox(owner, {
+          type: 'question', title: 'Website permission',
+          message: request.permission === 'notifications'
+            ? `Allow ${request.origin} to send notifications?`
+            : `Allow ${request.origin} to access ${request.description}?`,
+          detail: request.permission === 'notifications'
+            ? 'Notifications are allowed while this tab stays active on this page.'
+            : 'This allows the current request. The site can keep using access until it stops or the tab closes.',
+          buttons: ['Block', 'Allow once'], defaultId: 0, cancelId: 0, noLink: true
+        });
+        return result.response === 1;
+      });
       configureDownloadSaveDialogs(browserSession, app.getPath('downloads'));
-      configuredSessions.add(browserSession);
+      configuredSessions.set(browserSession, permissionPolicy);
     }
+    this.permissionTracking = permissionPolicy.track(view.webContents, window);
 
     window.contentView.addChildView(view);
     this.layout();
@@ -114,6 +129,7 @@ export class ChromiumEngine implements BrowserEngine {
   }
 
   setVisible(visible: boolean): void {
+    this.permissionTracking?.setActive(visible);
     this.view?.setVisible(visible);
   }
 
@@ -194,6 +210,8 @@ export class ChromiumEngine implements BrowserEngine {
   }
 
   destroy(): void {
+    this.permissionTracking?.dispose();
+    this.permissionTracking = null;
     const window = this.window;
     const view = this.view;
 

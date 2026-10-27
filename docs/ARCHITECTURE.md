@@ -45,7 +45,7 @@ what's implemented vs. planned see `docs/ROADMAP.md`.
 src/core/navigation/navigation.ts  — pure, Electron-free: turns address-bar
                                       input into a safe URL or a search query
 src/shared/                        — types/constants used by both main and renderer
-src/services/                      — permission deny-by-default and download save-dialog policies; settings remain future work
+src/services/                      — temporary permission prompts and download save-dialog policies; settings remain future work
 ```
 
 ## The pieces
@@ -96,9 +96,10 @@ work, since they only depend on `BrowserEngine`, never on `ChromiumEngine`
 directly.
 
 **Services (`src/services/`)** hold cross-cutting concerns that aren't
-browsing logic or UI. Permission requests are denied by default, and downloads
-use Electron's native save prompt with a safe suggested filename. User-facing
-permission controls, download management, and settings remain future work — see
+browsing logic or UI. Eligible website permission requests use a temporary
+native prompt; unsupported requests are denied. Downloads use Electron's native
+save prompt with a safe suggested filename. Persistent permission settings,
+download management, and settings remain future work — see
 each folder's README and `docs/ROADMAP.md`.
 
 **Shared (`src/shared/`)** holds plain types (`types/`) and constants

@@ -21,12 +21,16 @@ The current prototype provides:
   separate; create and switch profiles from the toolbar menu
 - Workspaces: save and reopen groups of tab URLs inside the active profile;
   reopening asks before replacing the current tabs
+- Website prompts for camera, microphone, location, and notifications with
+  temporary Allow once / Block choices
+- A native save dialog for downloads
 - Hardened renderer settings and a narrow preload API
 - Unit and integration coverage for navigation and window lifecycle behavior
 - A GitHub Actions workflow that builds a Windows installer artifact
 
-Profile deletion/custom profile names, workspace renaming/deletion, Gecko support, downloads, permissions,
-automatic updates, and advanced privacy controls are not implemented yet.
+Profile deletion/custom profile names, workspace renaming/deletion, Gecko support,
+download management, persistent permission settings, automatic updates, and
+advanced privacy controls are not implemented yet.
 
 ## Getting started
 

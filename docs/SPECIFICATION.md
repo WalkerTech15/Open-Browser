@@ -219,8 +219,8 @@ automatically. See ADR-004.
 - Three trust levels: main process (trusted), toolbar renderer (sandboxed, no Node, one narrow preload API), content view (untrusted, no preload).
 - Implemented: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` from one shared constant; thirteen named IPC channels, with commands restricted to a registered window's main frame at the exact toolbar file URL; navigation validation (only `http:` and `https:` load); no dynamic code execution.
 - **Implemented for the toolbar only:** a restrictive Content-Security-Policy in `src/renderer/layout/index.html`; it does not apply to websites in content views.
-- **Implemented:** website permission checks and requests are denied by default; downloads use the native save prompt with a sanitized suggested filename; Chromium's certificate validation remains enabled with no custom bypass.
-- **Missing** today: user-configurable permission prompts, download progress/history management, and signed updates. Payload validation at IPC is **Partial** (navigation input is type-checked; tab IDs are format-checked).
+- **Implemented:** eligible camera, microphone, location, and notification requests have temporary Block / Allow once prompts; unsupported requests are denied. Downloads use the native save prompt with a sanitized suggested filename; Chromium's certificate validation remains enabled with no custom bypass. See ADR-005 for permission lifetime and limitations.
+- **Missing** today: persistent permission settings, active capture indicators, download progress/history management, and signed updates. Payload validation at IPC is **Partial** (navigation input is type-checked; tab IDs are format-checked).
 
 **Standing project constraint (which items are V1 gates depends on ND-12).** Preserve the controls above (`AI_WORKFLOW.md` → Security rules) and "least privilege, process isolation, site isolation, strict IPC, secure defaults, signed updates, dependency review, and honest security documentation" (`VISION.md` → Security direction). Treat websites, renderer content, downloads, extensions, themes, external APIs, sync servers, and AI responses as untrusted. Never run the browser as administrator. Do not weaken security to pass tests.
 
@@ -237,7 +237,7 @@ automatically. See ADR-004.
 
 **Current prototype.** None.
 
-**Established.** The roadmap plans tracker/ad blocking and user-configurable permission prompts (`docs/ROADMAP.md`). Current permission requests are denied by default. The toolbar document has a restrictive Content Security Policy; this does not define policy for websites. Redirect protection is not mentioned in any document.
+**Established.** The roadmap plans tracker/ad blocking and persistent permission settings (`docs/ROADMAP.md`). Eligible requests now have temporary prompts. The toolbar document has a restrictive Content Security Policy; this does not define policy for websites. Redirect protection is not mentioned in any document.
 
 - OQ-29: The blocking mechanism and filter-list source.
 - OQ-30: What "redirect protection" covers.
@@ -491,5 +491,5 @@ There are 27 unresolved decisions; ND-05 is recorded below as resolved.
 
 1. `VISION.md` says detailed behavior belongs in `SPECIFICATION.md`, and this file now exists as a draft. It also says release criteria belong in `docs/ROADMAP.md`, which currently has none (ND-02).
 2. Test documentation previously disagreed about whether integration tests existed. The README, test guide, and `tests/integration/browserWindowController.test.ts` now consistently describe controller lifecycle coverage using fakes.
-3. The toolbar Content Security Policy is implemented and documented in `docs/SECURITY.md`; it does not cover website content. Permission requests are denied by default and downloads use a native save prompt, while configurable permission controls, download management, and tracker/ad blocking remain planned. ND-12 still leaves V1 security scope undecided.
+3. The toolbar Content Security Policy is implemented and documented in `docs/SECURITY.md`; it does not cover website content. Eligible permission requests have temporary prompts and downloads use a native save prompt. Persistent permission settings, download management, and tracker/ad blocking remain planned. ND-12 still leaves V1 security scope undecided.
 4. `VISION.md` says the engine boundary should eventually cover history, permissions, downloads, storage, extensions, and more. The current `BrowserEngine` contract covers tab visibility and navigation state/history controls only. The broader future boundary remains an open design question; ADR-001 resolves only the current tab-visibility need.

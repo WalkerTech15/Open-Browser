@@ -30,15 +30,17 @@ Extensions are not implemented.
 - Loading and error states surfaced in the toolbar
 - Hardened renderer settings (context isolation, no Node integration,
   sandboxing) shared across every webContents
+- Temporary Allow once / Block prompts for camera, microphone, location, and
+  notifications from an eligible active page; no permission choices are saved
 - Validated, narrow IPC boundary between renderer and main; commands require
   the registered toolbar window's main frame at its exact local file URL
 - Windows CI build producing a downloadable (unsigned) installer artifact
 
 ## Planned (next milestones, roughly in order)
 
-- **Privacy controls** — tracker/ad blocking and user-configurable permission
-  prompts (`src/services/permissions/`). The current prototype denies website
-  permissions by default. The toolbar document already has a restrictive
+- **Privacy controls** — tracker/ad blocking and persistent permission
+  settings. The prototype has temporary prompts; other permission types are
+  denied (`src/services/permissions/`). The toolbar document has a restrictive
   Content Security Policy; website content policies are a separate concern.
 - **Signed updates** — code-signing the Windows installer and building a
   real auto-update feed (e.g. `electron-updater` against a trusted host);
