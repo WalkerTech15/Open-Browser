@@ -1,9 +1,13 @@
-import { WebContentsView } from 'electron';
+import { app, WebContentsView } from 'electron';
 import type { BrowserWindow } from 'electron';
 import type { BrowserEngine } from '../interface/BrowserEngine';
 import type { NavigationState, NavigationStateListener } from '../../shared/types/navigationState';
 import { isNavigableUrl } from '../../core/navigation/navigation';
 import { SECURE_WEB_PREFERENCES } from '../../shared/constants/secureWebPreferences';
+import { denyWebsitePermissionsByDefault } from '../../services/permissions/denyByDefault';
+import { configureDownloadSaveDialogs } from '../../services/downloads/saveDialog';
+
+const configuredSessions = new WeakSet<object>();
 
 const ABORTED_ERROR_CODE = -3; // ERR_ABORTED, expected when the user hits Stop.
 
@@ -59,6 +63,13 @@ export class ChromiumEngine implements BrowserEngine {
       }
     });
     this.view = view;
+
+    const browserSession = view.webContents.session;
+    if (!configuredSessions.has(browserSession)) {
+      denyWebsitePermissionsByDefault(browserSession);
+      configureDownloadSaveDialogs(browserSession, app.getPath('downloads'));
+      configuredSessions.add(browserSession);
+    }
 
     window.contentView.addChildView(view);
     this.layout();

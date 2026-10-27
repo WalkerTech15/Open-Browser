@@ -1,10 +1,9 @@
-# Permissions service (reserved, not implemented)
+# Permissions service
 
-Planned home for mediating renderer permission requests (camera, microphone,
-geolocation, notifications, etc.) via Electron's
-`session.setPermissionRequestHandler`.
+`denyByDefault.ts` denies website permission checks, permission requests, and
+device permissions for each Chromium session. This is a restrictive prototype
+default; there is no user permission prompt or allowlist yet.
 
-**Current state:** no custom handler is installed anywhere in this app, so
-Electron's built-in default behavior applies. This is a gap, not a feature —
-see `docs/SECURITY.md` for how this is labeled there, and `docs/ROADMAP.md`
-for when this is planned.
+The checks and request handler are both installed because Electron requires
+both for complete permission handling. User-configurable permission controls
+remain future work; see `docs/SECURITY.md` and `docs/ROADMAP.md`.

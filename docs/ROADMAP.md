@@ -35,8 +35,10 @@ Extensions are not implemented.
 
 ## Planned (next milestones, roughly in order)
 
-- **Privacy controls** — tracker/ad blocking, a real Content-Security-Policy,
-  permission-request handling (`src/services/permissions/`)
+- **Privacy controls** — tracker/ad blocking and user-configurable permission
+  prompts (`src/services/permissions/`). The current prototype denies website
+  permissions by default. The toolbar document already has a restrictive
+  Content Security Policy; website content policies are a separate concern.
 - **Signed updates** — code-signing the Windows installer and building a
   real auto-update feed (e.g. `electron-updater` against a trusted host);
   see `docs/SECURITY.md`'s "Supply chain / update integrity" section for why
@@ -46,7 +48,7 @@ Extensions are not implemented.
 
 Nothing currently in active experimentation. Ideas that would need their own
 design pass before starting: extension support, a settings UI
-(`src/services/settings/`), download management UI
+(`src/services/settings/`), download progress/history management UI
 (`src/services/downloads/`).
 
 ## Explicitly future / not being designed yet

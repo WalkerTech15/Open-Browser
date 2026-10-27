@@ -64,7 +64,7 @@ src/
 │   └── gecko/           reserved, not implemented
 ├── renderer/     The toolbar UI (sandboxed, no Node access)
 │   ├── layout/, styles/, components/, state/
-├── services/     Reserved for permissions/downloads/settings (not built yet)
+├── services/     Permission and download safety defaults; settings remain future work
 └── shared/       Types and constants used by more than one layer
 
 tests/

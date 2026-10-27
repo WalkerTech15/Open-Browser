@@ -106,29 +106,45 @@ The renderer only ever assigns `textContent`, `.value`, and toggles
 literal string, so there's no DOM-XSS sink from `NavigationState` fields
 (e.g. the error message) reaching the page as markup.
 
-## Content Security Policy — Missing
+## Content Security Policy — Implemented for the toolbar
 
-No explicit `Content-Security-Policy` is set for the toolbar HTML or via
-session headers. Electron prints its own default-security-warnings dev
-console notice about this. This is a real gap, not yet addressed.
+The toolbar document (`src/renderer/layout/index.html`) sets a restrictive
+Content Security Policy through a document meta tag. It allows only local
+scripts and styles, blocks network connections and embedded objects, and
+restricts forms, frames, and base URLs. `tests/unit/rendererSecurity.test.ts`
+checks that the policy remains present and includes its restrictive directives.
 
-## Permission requests (camera/mic/geolocation/notifications) — Missing
+This policy applies only to the browser's toolbar UI. It does not set a policy
+for websites opened in content views; those remain untrusted and need separate
+privacy/security controls. Whether toolbar CSP is a V1 release gate remains
+undecided under ND-12 in `docs/SPECIFICATION.md`.
 
-No `session.setPermissionRequestHandler` is installed. Electron's built-in
-default behavior applies (which, in current Electron versions, denies most
-permission requests for non-trusted contexts by default — but this app does
-not customize or explicitly harden that). Planned home:
-`src/services/permissions/` — see `docs/ROADMAP.md`.
+## Permission requests (camera/mic/geolocation/notifications) — Denied by default
 
-## Downloads — Missing
+Every Chromium session installs permission-request, permission-check, and
+device-permission handlers that deny access. This avoids granting access while
+there is no user-facing permission manager. Camera, microphone, geolocation,
+notifications, screen capture, and device access are unavailable in the
+current prototype.
+User-configurable prompts and per-site grants remain planned work; see
+`src/services/permissions/README.md` and `docs/ROADMAP.md`.
 
-No `will-download` handling exists; Electron's default download behavior
-applies unmodified. Planned home: `src/services/downloads/`.
+## Downloads — Native save prompt configured
 
-## TLS/certificate errors — Missing (uses Chromium defaults)
+Each Chromium session configures Electron's native download save prompt with a
+suggested filename in the user's Downloads directory. The website-provided
+filename is reduced to its basename using either path separator. Invalid
+Windows characters and reserved names are handled; empty or dot-only names
+fall back to `download`. The user selects the final location.
+Download progress/history management is not implemented. See
+`src/services/downloads/README.md`.
 
-No custom `certificate-error` handling is installed. Chromium's normal
-certificate validation and warning pages apply as-is.
+## TLS/certificate errors — Chromium validation retained
+
+No custom `certificate-error` handler is installed, so Chromium validates
+certificates and presents its normal error behavior. This is intentional:
+custom overrides could let invalid certificates through. The prototype does
+not add a bypass or exception flow.
 
 ## Supply chain / update integrity — Missing
 
