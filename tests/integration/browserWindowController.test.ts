@@ -167,6 +167,40 @@ test('BrowserWindowController: persists navigation history and the active tab sn
   }
 });
 
+test('BrowserWindowController: clearing profile browsing data also clears its workspaces', async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'open-browser-clear-workspaces-'));
+  try {
+    const { ProfileStore } = await import('../../src/core/profiles/ProfileStore');
+    const profiles = new ProfileStore(directory);
+    const personal = await profiles.load();
+    const sessionStore = profiles.sessionStore(personal.id);
+    const session = await sessionStore.load();
+    const workspaces = profiles.workspaceStore(personal.id);
+    await workspaces.load();
+    await workspaces.save(['https://saved.example/']);
+
+    const fakeWindow = createFakeWindow();
+    const controller = new BrowserWindowController(
+      fakeWindow.window,
+      () => createFakeEngine().engine,
+      sessionStore,
+      session,
+      profiles,
+      personal
+    );
+    controller.handleNavigate('https://history.example/');
+    await sessionStore.flush();
+    await controller.clearHistoryAndSession();
+
+    assert.deepEqual(await workspaces.load(), []);
+    assert.deepEqual(sessionStore.history(), []);
+    assert.deepEqual(sessionStore.snapshot().tabs, []);
+    fakeWindow.close();
+  } finally {
+    await fs.rm(directory, { recursive: true, force: true });
+  }
+});
+
 test('BrowserWindowController: switching profiles restores separate history and tabs', async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'open-browser-profile-switch-'));
   try {

@@ -57,6 +57,24 @@ export class TabManager {
     this.activateTab(this.tabs[index].id);
   }
 
+  /** Replaces the open tab set with saved URLs, loading only the first page. */
+  replaceTabs(urls: string[]): void {
+    if (this.destroyed) return;
+    for (const tab of this.tabs) {
+      tab.unsubscribe();
+      tab.engine?.setVisible(false);
+      tab.engine?.destroy();
+    }
+    this.tabs.length = 0;
+    this.activeTabId = null;
+    for (const url of urls) this.addTab(url, true);
+    if (this.tabs.length === 0) {
+      this.createTab(this.startUrl);
+      return;
+    }
+    this.activateTab(this.tabs[0].id);
+  }
+
   private addTab(url: string, pendingInitialNavigation: boolean): ManagedTab {
     const tab: ManagedTab = {
       id: `tab-${this.nextId++}`,

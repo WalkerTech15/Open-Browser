@@ -119,6 +119,26 @@ test('TabManager restores only the active engine and creates background engines 
   assert.equal(engines[1].lastNavigatedUrl(), 'https://two.example/');
 });
 
+test('TabManager replaces tabs with a saved workspace and keeps background pages unloaded', () => {
+  const { manager, engines } = createManager();
+  manager.createTab('https://old.example/');
+  manager.createTab('https://also-old.example/');
+
+  manager.replaceTabs(['https://one.example/', 'https://two.example/']);
+
+  assert.equal(engines[0].destroyCount(), 1);
+  assert.equal(engines[1].destroyCount(), 1);
+  assert.deepEqual(manager.getTabsState().tabs.map((tab) => tab.url), [
+    'https://one.example/',
+    'https://two.example/'
+  ]);
+  assert.equal(engines.length, 3);
+  assert.equal(engines[2].lastNavigatedUrl(), 'https://one.example/');
+  manager.activateTab('tab-4');
+  assert.equal(engines.length, 4);
+  assert.equal(engines[3].lastNavigatedUrl(), 'https://two.example/');
+});
+
 test('closing an unselected restored tab does not create its engine', () => {
   const { manager, engines } = createManager();
   manager.restoreTabs(['https://one.example/', 'https://two.example/'], 0);

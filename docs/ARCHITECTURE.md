@@ -22,6 +22,7 @@ what's implemented vs. planned see `docs/ROADMAP.md`.
 │              owns one window's active profile and TabManager; routes profile switching        │
 │                     │                                                                        │
 │                     ├─ src/core/profiles/ProfileStore.ts (registry + isolated data paths)     │
+│                     ├─ src/core/workspaces/WorkspaceStore.ts (profile-scoped saved URL groups)│
 │                     ├─ src/core/tabs/TabManager.ts (engines created on demand; one visible)   │
 │                     └─ src/core/sessions/SessionStore.ts (local profile JSON data)             │
 │                     │                                                                        │
@@ -64,8 +65,9 @@ bundler, so no runtime `import`/`export` in these files.
 
 **Core (`src/core/`)** holds browsing concepts that don't depend on which
 engine is running: `browser/` (window-level wiring), `profiles/` (local
-profile registry and data paths), `tabs/` (tab collection and active
-selection), `sessions/` (local tab/history persistence), and
+profile registry and data paths), `workspaces/` (saved URL groups scoped to a
+profile), `tabs/` (tab collection and active selection), `sessions/` (local
+tab/history persistence), and
 `navigation/` (interpreting address-bar input). `SessionStore` uses Node's
 filesystem APIs in the trusted main process; it stores versioned JSON under
 Electron's per-install `userData` directory. The Personal profile reuses the
@@ -73,8 +75,11 @@ legacy `browser-data.json` path and Chromium's default session to preserve
 existing data. Additional profiles use a UUID-derived persistent Chromium
 partition and their own `profiles/<id>/browser-data.json`. Profile data stores
 URLs and visit times, not page contents or URL-embedded credentials. The user
-can clear history and the saved restore snapshot together for the active
-profile. `navigation/` remains pure and
+can clear history, the saved restore snapshot, and saved workspace URLs together
+for the active profile. Saved workspace URLs live in `workspaces.json` for Personal and
+`profiles/<id>/workspaces.json` for other profiles; layout, theme, permissions,
+and cross-device sync are not included. Reopening a saved workspace replaces
+the current tab set after user confirmation. `navigation/` remains pure and
 engine-free, which is why it is unit-tested directly.
 
 **Engine abstraction (`src/engines/`)** exists so the rendering engine is

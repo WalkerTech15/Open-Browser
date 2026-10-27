@@ -88,7 +88,6 @@ export class BrowserWindowController {
 
   showHistoryMenu(): void {
     const entries = this.sessionStore?.history() ?? [];
-    const hasSavedTabs = (this.sessionStore?.snapshot().tabs.length ?? 0) > 0;
     const template: Electron.MenuItemConstructorOptions[] = [
       { label: 'Recently visited', enabled: false },
       ...(entries.length > 0
@@ -100,7 +99,7 @@ export class BrowserWindowController {
       { type: 'separator' },
       {
         label: 'Clear history and saved tabs…',
-        enabled: entries.length > 0 || hasSavedTabs,
+        enabled: true,
         click: () => { void this.confirmClearHistoryAndSession(); }
       }
     ];
@@ -120,6 +119,107 @@ export class BrowserWindowController {
       { label: 'Create profile…', click: () => { void this.createAndSwitchProfile(); } }
     ];
     Menu.buildFromTemplate(template).popup({ window: this.window });
+  }
+
+  async showWorkspacesMenu(): Promise<void> {
+    if (!this.profileStore || this.disposed) return;
+    try {
+      const store = this.profileStore.workspaceStore(this.activeProfile.id);
+      const workspaces = await store.load();
+      if (this.disposed || this.window.isDestroyed()) return;
+      const currentUrls = this.tabManager.getTabsState().tabs
+        .map(({ url }) => url)
+        .filter((url) => /^https?:\/\//i.test(url));
+      const template: Electron.MenuItemConstructorOptions[] = [
+        { label: 'Saved workspaces', enabled: false },
+        ...(workspaces.length > 0
+          ? workspaces.map((workspace) => ({
+            label: `${workspace.name} (${workspace.urls.length} tabs)`,
+            click: () => this.openWorkspace(workspace.id)
+          }))
+          : [{ label: 'No saved workspaces', enabled: false }]),
+        { type: 'separator' },
+        {
+          label: 'Save current tabs as a workspace',
+          enabled: currentUrls.length > 0,
+          click: () => { void this.saveCurrentWorkspace(); }
+        }
+      ];
+      Menu.buildFromTemplate(template).popup({ window: this.window });
+    } catch (error) {
+      console.error('Could not load browser workspaces.', error);
+      if (!this.window.isDestroyed()) {
+        await dialog.showMessageBox(this.window, {
+          type: 'error',
+          message: 'Could not load workspaces.',
+          detail: 'Workspace data could not be read. Your current tabs are still open.',
+          buttons: ['OK'],
+          noLink: true
+        });
+      }
+    }
+  }
+
+  private async saveCurrentWorkspace(): Promise<void> {
+    if (!this.profileStore || this.disposed) return;
+    const urls = this.tabManager.getTabsState().tabs
+      .map(({ url }) => url)
+      .filter((url) => /^https?:\/\//i.test(url));
+    try {
+      const workspace = await this.profileStore.workspaceStore(this.activeProfile.id).save(urls);
+      if (!this.window.isDestroyed()) {
+        await dialog.showMessageBox(this.window, {
+          type: 'info',
+          message: `${workspace.name} saved`,
+          detail: `${workspace.urls.length} tab URLs were saved in the ${this.activeProfile.name} profile.`,
+          buttons: ['OK'],
+          noLink: true
+        });
+      }
+    } catch (error) {
+      console.error('Could not save the browser workspace.', error);
+      if (!this.window.isDestroyed()) {
+        await dialog.showMessageBox(this.window, {
+          type: 'error',
+          message: 'Could not save the workspace.',
+          detail: 'Check available disk space and try again.',
+          buttons: ['OK'],
+          noLink: true
+        });
+      }
+    }
+  }
+
+  private async openWorkspace(workspaceId: string): Promise<void> {
+    if (!this.profileStore || this.disposed) return;
+    try {
+      const workspaces = await this.profileStore.workspaceStore(this.activeProfile.id).load();
+      const workspace = workspaces.find(({ id }) => id === workspaceId);
+      if (!workspace || this.disposed) return;
+      const result = await dialog.showMessageBox(this.window, {
+        type: 'warning',
+        message: `Open ${workspace.name}?`,
+        detail: 'Opening this workspace replaces the tabs currently open in this window. Save them as a workspace first if you want to keep them.',
+        buttons: ['Cancel', 'Replace tabs'],
+        defaultId: 0,
+        cancelId: 0,
+        noLink: true
+      });
+      if (result.response !== 1 || this.disposed) return;
+      this.lastUrlByTab.clear();
+      this.tabManager.replaceTabs(workspace.urls);
+    } catch (error) {
+      console.error('Could not open the browser workspace.', error);
+      if (!this.window.isDestroyed()) {
+        await dialog.showMessageBox(this.window, {
+          type: 'error',
+          message: 'Could not open the workspace.',
+          detail: 'Your current tabs are still open. Check the saved workspace data and try again.',
+          buttons: ['OK'],
+          noLink: true
+        });
+      }
+    }
   }
 
   async switchProfile(profileId: string): Promise<void> {
@@ -199,14 +299,15 @@ export class BrowserWindowController {
   async clearHistoryAndSession(): Promise<void> {
     if (!this.sessionStore) return;
     await this.sessionStore.clearHistoryAndSession();
+    if (this.profileStore) await this.profileStore.workspaceStore(this.activeProfile.id).clear();
     this.lastSavedSessionKey = this.sessionKey();
   }
 
   private async confirmClearHistoryAndSession(): Promise<void> {
     const result = await dialog.showMessageBox(this.window, {
       type: 'warning',
-      message: 'Clear browsing history and saved tabs?',
-      detail: 'Your open pages will stay open, but they will not be restored next time.',
+      message: 'Clear history, saved tabs, and workspaces?',
+      detail: 'Your open pages stay open. Saved workspaces and the session restore list for this profile are removed.',
       buttons: ['Cancel', 'Clear'],
       defaultId: 0,
       cancelId: 0,

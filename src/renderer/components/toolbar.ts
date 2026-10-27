@@ -8,6 +8,7 @@ const tabList = document.getElementById('tab-list') as HTMLDivElement;
 const newTabButton = document.getElementById('new-tab-button') as HTMLButtonElement;
 const historyButton = document.getElementById('history-button') as HTMLButtonElement;
 const profilesButton = document.getElementById('profiles-button') as HTMLButtonElement;
+const workspacesButton = document.getElementById('workspaces-button') as HTMLButtonElement;
 
 let addressHasFocus = false;
 let focusAddressAfterTabCreation = false;
@@ -119,3 +120,4 @@ window.openBrowser.onState((state) => {
 window.openBrowser.onTabs(renderTabs);
 historyButton.addEventListener('click', () => window.openBrowser.showHistory());
 profilesButton.addEventListener('click', () => window.openBrowser.showProfiles());
+workspacesButton.addEventListener('click', () => window.openBrowser.showWorkspaces());

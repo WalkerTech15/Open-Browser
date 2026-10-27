@@ -38,6 +38,23 @@ test('ProfileStore creates and switches to separate profile history/session path
   });
 });
 
+test('ProfileStore keeps workspace files separate for each profile', async () => {
+  await withProfileStore(async (store, directory) => {
+    const personal = await store.load();
+    const personalWorkspaces = store.workspaceStore(personal.id);
+    await personalWorkspaces.load();
+    await personalWorkspaces.save(['https://personal.example/']);
+
+    const work = await store.createProfile();
+    const workspaces = store.workspaceStore(work.id);
+    assert.deepEqual(await workspaces.load(), []);
+    await workspaces.save(['https://work.example/']);
+    await fs.access(path.join(directory, 'workspaces.json'));
+    await fs.access(path.join(directory, 'profiles', work.id, 'workspaces.json'));
+    assert.deepEqual((await personalWorkspaces.load()).map(({ name }) => name), ['Workspace 1']);
+  });
+});
+
 test('ProfileStore does not replace a corrupt registry with a fresh profile set', async () => {
   await withProfileStore(async (store, directory) => {
     await fs.writeFile(path.join(directory, 'profiles.json'), '{broken', 'utf8');

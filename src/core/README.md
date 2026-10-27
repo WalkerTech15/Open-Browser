@@ -11,5 +11,6 @@ if the underlying engine (Chromium/Gecko) changed.
 - `tabs/` — live tab state and active-tab selection; see `tabs/README.md`.
 - `sessions/` — local history and restorable-tab data; see `sessions/README.md`.
 - `profiles/` — local profile registry and isolated session-data locations.
+- `workspaces/` — saved HTTP(S) tab URL groups, stored separately per profile.
 
 See `docs/ARCHITECTURE.md` for the full picture.

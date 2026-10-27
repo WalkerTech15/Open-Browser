@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { BrowserProfile } from '../../shared/types/browserProfiles';
 import { SessionStore } from '../sessions/SessionStore';
+import { WorkspaceStore } from '../workspaces/WorkspaceStore';
 
 interface PersistedProfiles {
   version: 1;
@@ -19,6 +20,7 @@ const PERSONAL_PROFILE: BrowserProfile = {
 /** Stores profile identities and gives each profile its own session-data path. */
 export class ProfileStore {
   private readonly sessionStores = new Map<string, SessionStore>();
+  private readonly workspaceStores = new Map<string, WorkspaceStore>();
   private data: PersistedProfiles = {
     version: 1,
     activeProfileId: PERSONAL_PROFILE.id,
@@ -67,6 +69,19 @@ export class ProfileStore {
     if (!store) {
       store = new SessionStore(this.sessionFilePath(profile.id));
       this.sessionStores.set(profile.id, store);
+    }
+    return store;
+  }
+
+  workspaceStore(profileId: string): WorkspaceStore {
+    const profile = this.requireProfile(profileId);
+    let store = this.workspaceStores.get(profile.id);
+    if (!store) {
+      const filePath = profile.id === PERSONAL_PROFILE.id
+        ? path.join(this.userDataPath, 'workspaces.json')
+        : path.join(this.userDataPath, 'profiles', profile.id, 'workspaces.json');
+      store = new WorkspaceStore(filePath);
+      this.workspaceStores.set(profile.id, store);
     }
     return store;
   }

@@ -59,6 +59,10 @@ export function registerNavigationIpcHandlers(): void {
   ipcMain.on(IpcChannel.ProfilesOpen, (event) => {
     getBrowserWindowController(event.sender.id)?.showProfilesMenu();
   });
+
+  ipcMain.on(IpcChannel.WorkspacesOpen, (event) => {
+    void getBrowserWindowController(event.sender.id)?.showWorkspacesMenu();
+  });
 }
 
 function isTabId(value: unknown): value is string {

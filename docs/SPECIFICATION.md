@@ -37,16 +37,16 @@ Sources: `VISION.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `d
 
 ## 2. V1 scope
 
-**Current prototype.** None defined. `docs/ROADMAP.md` lists upcoming milestones: Workspaces, Privacy controls, and Signed updates. It does not call any of them V1, and it defines no release criteria (although `VISION.md` says release criteria belong in the roadmap).
+**Current prototype.** `docs/ROADMAP.md` lists upcoming milestones, but it does not call any of them V1 or define release criteria (although `VISION.md` says release criteria belong in the roadmap).
 
 **Confirmed V1 requirements.** None yet.
 
-- ND-01: Which features make up V1? The roadmap-planned list above is the only candidate set; this draft treats it as "conditional V1 candidates" and writes conditional acceptance criteria for it in §32 without asserting that any of it is V1.
+- ND-01: Which features make up V1? Features documented as implemented or planned in `docs/ROADMAP.md` are possible candidates; this draft writes conditional acceptance criteria in §32 without asserting that any of them are V1.
 - ND-02: What are V1's release criteria?
 
 ## 3. V1 non-goals
 
-**Established non-goals for the *current milestone*** (`docs/ROADMAP.md`): profile deletion/custom profile names, workspaces UI, Gecko, auto-updates, telemetry, AI features, code signing, publishing credentials, macOS/Linux packaging, website deployment.
+**Established non-goals for the *current milestone*** (`docs/ROADMAP.md`): profile deletion/custom profile names, workspace renaming/deletion UI, Gecko, auto-updates, telemetry, AI features, code signing, publishing credentials, macOS/Linux packaging, website deployment.
 
 **V1 non-goals.** Not defined. Several items above are also "Planned", so the current-milestone list cannot simply be reused as the V1 list.
 
@@ -101,7 +101,10 @@ whether sessions, history export, or any of these behaviors belong in V1.
 
 ## 6. Workspaces
 
-**Current prototype.** None.
+**Current prototype.** Workspaces can be saved and reopened from the toolbar.
+Each workspace stores an ordered group of HTTP(S) URLs under one profile; the
+user confirms before a workspace replaces the current tabs. Names are generated
+automatically. See ADR-004.
 
 **Established constraints.**
 - "Grouping tabs/sessions for different contexts" (`docs/ROADMAP.md` → Planned).
@@ -110,8 +113,13 @@ whether sessions, history export, or any of these behaviors belong in V1.
 - Workspaces are separate from profiles (`AI_WORKFLOW.md`).
 
 **Not defined.**
-- OQ-06: Whether a workspace belongs to one profile or can span profiles.
-- OQ-07: What a workspace stores (tabs, layout, theme, permissions).
+- OQ-06: Resolved for the current prototype: each workspace belongs to one
+  profile (`docs/decisions/ADR-004-profile-scoped-workspaces.md`). This does not
+  decide V1 scope.
+- OQ-07: Resolved for the current prototype: a workspace stores ordered HTTP(S)
+  tab URLs only. Names are generated; layout, theme, and permissions are not
+  stored (`docs/decisions/ADR-004-profile-scoped-workspaces.md`). This does not
+  decide V1 scope.
 - OQ-08: How workspaces relate to the experience presets in §22–24.
 
 ## 7. Tabs and tab lifecycle
@@ -252,7 +260,7 @@ whether sessions, history export, or any of these behaviors belong in V1.
 
 ## 18. Sidebar / workspace restore
 
-**Current prototype.** None.
+**Current prototype.** Users can reopen saved workspace URL groups manually from the toolbar menu. There is no workspace sidebar or automatic selection/restoration of a workspace at startup.
 
 **Established.** Startup restores tab metadata first (`VISION.md` → Performance direction). Cross-device restore appears in no document.
 
@@ -468,12 +476,13 @@ There are 27 unresolved decisions; ND-05 is recorded below as resolved.
 - QV-01 Toolbar accessibility status (§28). Reclassified from OQ-43.
 
 ### OPEN QUESTION
-- OQ-01 to OQ-47 are listed inline in the sections above, except OQ-03 (resolved for the current prototype by ADR-003), OQ-04, OQ-05, and OQ-12 (resolved for the current implementation by ADR-002 and ADR-001), and OQ-43 (reclassified as QV-01). OQ-02 is still open for permission settings, app settings, and future extension data. This leaves 42 open questions. Section numbers: audiences (§1), profiles (§4), workspaces (§6), tabs (§7), layouts (§8), search (§9), personalization (§10–12), privacy (§13), security (§14), ad/tracker (§16), sync (§17), restore (§18), AI (§19), performance (§20–21), developer (§23), import/export (§27), accessibility (§28), installer (§30), updates (§31).
+- OQ-01 to OQ-47 are listed inline in the sections above, except OQ-03 (resolved for the current prototype by ADR-003), OQ-04, OQ-05, and OQ-12 (resolved for the current implementation by ADR-002 and ADR-001), OQ-06 and OQ-07 (resolved for the current prototype by ADR-004), and OQ-43 (reclassified as QV-01). OQ-02 is still open for permission settings, app settings, and future extension data. This leaves 40 open questions. Section numbers: audiences (§1), profiles (§4), workspaces (§6), tabs (§7), layouts (§8), search (§9), personalization (§10–12), privacy (§13), security (§14), ad/tracker (§16), sync (§17), restore (§18), AI (§19), performance (§20–21), developer (§23), import/export (§27), accessibility (§28), installer (§30), updates (§31).
 
 ### Resolved user decisions
 - ND-05 — History remains until the user clears it; startup restores tabs automatically. Clearing history also removes the saved tab set. Recorded in ADR-002. This does not decide V1 scope.
 - OQ-02 — Cookies/site storage, browsing history, and restored tabs are isolated by profile for the current prototype. Permission settings, app settings, and future extension data remain undecided. Recorded in ADR-003.
 - OQ-03 — The app creates Personal automatically on first run, creates new profiles using generated names, and remembers the active profile. Resolved for the current prototype by ADR-003.
+- OQ-06 and OQ-07 — Workspaces are profile-scoped and store ordered HTTP(S) tab URLs only in the current prototype. See ADR-004. This does not decide V1 membership, startup restoration, or cross-device sync.
 - ND-04 — No profile deletion is available in the current prototype. Limits, custom naming, and deletion behavior remain user decisions; see ADR-003.
 
 ## Conflicts found with existing documents

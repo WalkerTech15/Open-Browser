@@ -19,4 +19,5 @@ export interface OpenBrowserApi {
   onTabs(listener: (state: BrowserTabsState) => void): () => void;
   showHistory(): void;
   showProfiles(): void;
+  showWorkspaces(): void;
 }

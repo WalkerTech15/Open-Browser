@@ -6,8 +6,9 @@ A single-window, Chromium-only browser with a classic horizontal tab strip.
 Tabs can be created, switched, and closed. Pages stay alive while their tabs
 are inactive. Local history and automatic tab restoration are implemented.
 Basic profiles can be created and switched; each keeps separate site storage,
-history, and restored tabs. Profile deletion and custom names are not yet
-implemented. Extensions are not implemented.
+history, and restored tabs. Saved workspaces can group and reopen tab URLs
+within one profile. Profile deletion and custom names are not yet implemented.
+Extensions are not implemented.
 
 ## Implemented
 
@@ -18,11 +19,14 @@ implemented. Extensions are not implemented.
 - Back / forward / reload / stop
 - Local browsing history with no time-based expiry and automatic tab restore
 - Inactive restored tabs load only when selected
-- The native History menu offers a confirmed action to clear history and saved
-  restore tabs; current pages stay open
+- The native History menu offers a confirmed action to clear history, saved
+  restore tabs, and saved workspace URL groups for the active profile; current
+  pages stay open
 - Basic local profiles: Personal is created by default, additional profiles
   can be created and switched, and each uses a separate Chromium storage
   partition plus a separate history/session file
+- Profile-scoped workspaces: save current tab URLs under generated names and
+  reopen a saved group after confirming that the current tabs will be replaced
 - Loading and error states surfaced in the toolbar
 - Hardened renderer settings (context isolation, no Node integration,
   sandboxing) shared across every webContents
@@ -31,7 +35,6 @@ implemented. Extensions are not implemented.
 
 ## Planned (next milestones, roughly in order)
 
-- **Workspaces** — grouping tabs/sessions for different contexts
 - **Privacy controls** — tracker/ad blocking, a real Content-Security-Policy,
   permission-request handling (`src/services/permissions/`)
 - **Signed updates** — code-signing the Windows installer and building a
@@ -56,6 +59,6 @@ design pass before starting: extension support, a settings UI
 ## Non-goals for the current milestone
 
 These are deliberately out of scope right now, not forgotten:
-profile deletion/custom naming, workspaces UI, Gecko, auto-updates, telemetry, AI
+profile deletion/custom naming, workspace renaming/deletion UI, Gecko, auto-updates, telemetry, AI
 features, code signing, publishing credentials, macOS/Linux packaging,
 website deployment.

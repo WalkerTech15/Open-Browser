@@ -19,11 +19,13 @@ The current prototype provides:
   clearing history also removes the saved restore tabs
 - Basic profiles: keep cookies/site storage, history, and restored tabs
   separate; create and switch profiles from the toolbar menu
+- Workspaces: save and reopen groups of tab URLs inside the active profile;
+  reopening asks before replacing the current tabs
 - Hardened renderer settings and a narrow preload API
 - Unit and integration coverage for navigation and window lifecycle behavior
 - A GitHub Actions workflow that builds a Windows installer artifact
 
-Profile deletion/custom profile names, workspaces, Gecko support, downloads, permissions,
+Profile deletion/custom profile names, workspace renaming/deletion, Gecko support, downloads, permissions,
 automatic updates, and advanced privacy controls are not implemented yet.
 
 ## Getting started
@@ -54,7 +56,8 @@ src/
 │   ├── navigation/     address-bar input → safe URL or search
 │   ├── tabs/           in-memory tab collection and active-tab selection
 │   ├── sessions/        local history and restorable-tab persistence
-│   └── profiles/       profile registry and per-profile data paths
+│   ├── profiles/       profile registry and per-profile data paths
+│   └── workspaces/     per-profile saved groups of tab URLs
 ├── engines/      The swappable rendering-engine abstraction
 │   ├── interface/      the BrowserEngine contract
 │   ├── chromium/        the only implementation today
