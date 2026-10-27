@@ -30,7 +30,8 @@ Extensions are not implemented.
 - Loading and error states surfaced in the toolbar
 - Hardened renderer settings (context isolation, no Node integration,
   sandboxing) shared across every webContents
-- Validated, narrow IPC boundary between renderer and main
+- Validated, narrow IPC boundary between renderer and main; commands require
+  the registered toolbar window's main frame at its exact local file URL
 - Windows CI build producing a downloadable (unsigned) installer artifact
 
 ## Planned (next milestones, roughly in order)

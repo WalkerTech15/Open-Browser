@@ -10,6 +10,10 @@ privileged main process.
 - `ipcHandlers.ts` — the *only* `ipcMain` listeners in the app. Validates
   every message and always resolves the acting window from `event.sender`,
   never from renderer-supplied data.
+- `trustedToolbarSender.ts` — rejects commands from destroyed senders,
+  child frames, and any document outside the exact toolbar file URL.
+  `src/main/windows/toolbarLocation.ts` is shared with window creation so
+  the checked URL matches the file actually loaded in development and packaging.
 
 The shared hardened `webPreferences` policy (`contextIsolation`,
 `nodeIntegration`, `sandbox`) lives in

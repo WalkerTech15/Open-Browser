@@ -217,10 +217,10 @@ automatically. See ADR-004.
 
 **Current prototype (`docs/SECURITY.md`).**
 - Three trust levels: main process (trusted), toolbar renderer (sandboxed, no Node, one narrow preload API), content view (untrusted, no preload).
-- Implemented: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` from one shared constant; eleven named IPC channels with sender-scoped handlers; navigation validation (only `http:` and `https:` load); no dynamic code execution.
+- Implemented: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` from one shared constant; thirteen named IPC channels, with commands restricted to a registered window's main frame at the exact toolbar file URL; navigation validation (only `http:` and `https:` load); no dynamic code execution.
 - **Implemented for the toolbar only:** a restrictive Content-Security-Policy in `src/renderer/layout/index.html`; it does not apply to websites in content views.
 - **Implemented:** website permission checks and requests are denied by default; downloads use the native save prompt with a sanitized suggested filename; Chromium's certificate validation remains enabled with no custom bypass.
-- **Missing** today: user-configurable permission prompts, download progress/history management, and signed updates. Payload validation at IPC is **Partial** (type-only).
+- **Missing** today: user-configurable permission prompts, download progress/history management, and signed updates. Payload validation at IPC is **Partial** (navigation input is type-checked; tab IDs are format-checked).
 
 **Standing project constraint (which items are V1 gates depends on ND-12).** Preserve the controls above (`AI_WORKFLOW.md` → Security rules) and "least privilege, process isolation, site isolation, strict IPC, secure defaults, signed updates, dependency review, and honest security documentation" (`VISION.md` → Security direction). Treat websites, renderer content, downloads, extensions, themes, external APIs, sync servers, and AI responses as untrusted. Never run the browser as administrator. Do not weaken security to pass tests.
 

@@ -60,13 +60,21 @@ generic IPC passthrough and no dynamic channel names.
   `event.sender.id`, looked up against controllers registered by
   `src/core/browser/BrowserWindowController.ts` — a window can only ever
   control itself, even if a compromised renderer sent a forged payload.
+- Every command also passes `trustedToolbarSender.ts`: the sender must be
+  alive, the sending frame must be that webContents' main frame, and its URL
+  must exactly match the toolbar file URL. Child frames, other local pages,
+  remote pages, and missing frames are rejected. The expected URL and the
+  loaded toolbar path share `src/main/windows/toolbarLocation.ts`, including
+  when the app is packaged in an asar archive.
 - The `navigate` handler validates `typeof input === 'string'` before doing
   anything with it. It is otherwise unbounded free text (no length limit) —
   this is intentional, since address-bar input is meant to be free text, but
   is worth knowing if you're auditing input validation specifically.
 
-**Partial:** payload validation at the IPC layer is minimal (type-only) —
-the real safety net is the navigation-target validation described next.
+**Partial:** navigation payload validation at the IPC layer is minimal
+(type-only); tab IDs must match `tab-` followed by one to eight digits. The
+navigation-target validation described next is still required in addition
+to sender validation.
 
 Profile metadata, history, session data, and saved workspace URL groups are written only by the trusted main process
 to the app's local `userData` directory. Each profile has its own HTTP(S)-only

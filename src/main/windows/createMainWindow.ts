@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { BrowserWindow } from 'electron';
 import * as path from 'node:path';
 import { SECURE_WEB_PREFERENCES } from '../../shared/constants/secureWebPreferences';
 import { ChromiumEngine } from '../../engines/chromium/ChromiumEngine';
@@ -6,11 +6,7 @@ import { BrowserWindowController } from '../../core/browser/BrowserWindowControl
 import type { BrowserSessionSnapshot, SessionStore } from '../../core/sessions/SessionStore';
 import type { BrowserProfile } from '../../shared/types/browserProfiles';
 import type { ProfileStore } from '../../core/profiles/ProfileStore';
-
-// app.getAppPath() (rather than a chain of __dirname + '..') keeps this
-// correct regardless of how deep this compiled file lives under dist/, and
-// still resolves correctly inside a packaged asar.
-const RENDERER_ENTRY = path.join(app.getAppPath(), 'src/renderer/layout/index.html');
+import { getToolbarEntryPath } from './toolbarLocation';
 
 /**
  * Creates the single toolbar window for this prototype (multi-window/tab
@@ -45,7 +41,7 @@ export function createMainWindow(
     activeProfile
   );
 
-  void window.loadFile(RENDERER_ENTRY);
+  void window.loadFile(getToolbarEntryPath());
 
   return window;
 }
