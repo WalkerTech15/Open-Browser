@@ -5,6 +5,8 @@ import { IpcChannel } from '../../shared/constants/ipcChannels';
 import { resolveAddressInput } from '../navigation/navigation';
 import { TabManager, type BrowserEngineFactory } from '../tabs/TabManager';
 import { SessionStore, type BrowserSessionSnapshot } from '../sessions/SessionStore';
+import { ProfileStore } from '../profiles/ProfileStore';
+import type { BrowserProfile } from '../../shared/types/browserProfiles';
 
 const BROWSER_CHROME_HEIGHT = 96;
 const START_URL = 'https://duckduckgo.com';
@@ -23,41 +25,31 @@ export function getBrowserWindowController(webContentsId: number): BrowserWindow
 export class BrowserWindowController {
   private readonly window: BrowserWindow;
   private readonly webContentsId: number;
-  private readonly tabManager: TabManager;
-  private readonly unsubscribe: () => void;
+  private tabManager!: TabManager;
+  private unsubscribe: () => void = () => {};
   private disposed = false;
-  private readonly sessionStore?: SessionStore;
+  private sessionStore?: SessionStore;
   private readonly lastUrlByTab = new Map<string, string>();
   private lastSavedSessionKey = '';
+  private activeProfile: BrowserProfile = { id: 'personal', name: 'Personal', createdAt: 0 };
 
   constructor(
     window: BrowserWindow,
-    createEngine: BrowserEngineFactory = () => new ChromiumEngine(),
+    private readonly createEngineForProfile: (profileId: string) => ReturnType<BrowserEngineFactory> = () => new ChromiumEngine(),
     sessionStore?: SessionStore,
-    initialSession?: BrowserSessionSnapshot
+    initialSession?: BrowserSessionSnapshot,
+    private readonly profileStore?: ProfileStore,
+    activeProfile?: BrowserProfile
   ) {
     this.window = window;
     this.webContentsId = window.webContents.id;
-    this.tabManager = new TabManager(window, BROWSER_CHROME_HEIGHT, createEngine, START_URL);
     this.sessionStore = sessionStore;
-
-    this.unsubscribe = this.tabManager.onChange((tabs) => {
-      this.pushState();
-      this.persistTabState(tabs);
-      this.recordChangedUrls(tabs.tabs.map((tab) => ({ id: tab.id, url: tab.url })));
-    });
+    if (activeProfile) this.activeProfile = activeProfile;
     controllers.set(this.webContentsId, this);
     window.webContents.once('did-finish-load', () => this.pushState());
     window.on('closed', () => this.dispose());
-
-    if (initialSession?.tabs.length) {
-      // Seed the URL cache so restoring a page does not create a new history visit.
-      initialSession.tabs.forEach((url, index) => this.lastUrlByTab.set(`tab-${index + 1}`, url));
-      this.tabManager.restoreTabs(initialSession.tabs, initialSession.activeTabIndex);
-    } else {
-      this.tabManager.createTab(START_URL);
-    }
-    this.lastSavedSessionKey = this.sessionKey();
+    this.startTabManager(initialSession);
+    this.updateWindowTitle();
   }
 
   /** Resolves free-form address-bar input before navigating the active tab. */
@@ -113,6 +105,95 @@ export class BrowserWindowController {
       }
     ];
     Menu.buildFromTemplate(template).popup({ window: this.window });
+  }
+
+  showProfilesMenu(): void {
+    if (!this.profileStore) return;
+    const template: Electron.MenuItemConstructorOptions[] = [
+      ...this.profileStore.profiles().map((profile) => ({
+        label: profile.name,
+        type: 'radio' as const,
+        checked: profile.id === this.activeProfile.id,
+        click: () => { void this.switchProfile(profile.id); }
+      })),
+      { type: 'separator' },
+      { label: 'Create profile…', click: () => { void this.createAndSwitchProfile(); } }
+    ];
+    Menu.buildFromTemplate(template).popup({ window: this.window });
+  }
+
+  async switchProfile(profileId: string): Promise<void> {
+    if (!this.profileStore || profileId === this.activeProfile.id || this.disposed) return;
+    const profile = this.profileStore.profiles().find((item) => item.id === profileId);
+    if (!profile) return;
+
+    try {
+      const nextStore = this.profileStore.sessionStore(profile.id);
+      const nextSnapshot = await nextStore.load();
+      await this.sessionStore?.flush();
+      await this.profileStore.activate(profile.id);
+
+      this.unsubscribe();
+      this.tabManager.destroy();
+      this.lastUrlByTab.clear();
+      this.activeProfile = profile;
+      this.sessionStore = nextStore;
+      this.startTabManager(nextSnapshot);
+      this.updateWindowTitle();
+    } catch (error) {
+      console.error('Could not switch browser profiles.', error);
+      if (!this.window.isDestroyed()) {
+        await dialog.showMessageBox(this.window, {
+          type: 'error',
+          message: 'Could not switch profiles.',
+          detail: 'The current profile is still open. Check available disk space and try again.',
+          buttons: ['OK'],
+          noLink: true
+        });
+      }
+    }
+  }
+
+  private async createAndSwitchProfile(): Promise<void> {
+    if (!this.profileStore) return;
+    try {
+      const profile = await this.profileStore.createProfile();
+      await this.switchProfile(profile.id);
+    } catch (error) {
+      console.error('Could not create a browser profile.', error);
+      if (!this.window.isDestroyed()) {
+        await dialog.showMessageBox(this.window, {
+          type: 'error',
+          message: 'Could not create a profile.',
+          detail: 'Check available disk space and try again.',
+          buttons: ['OK'],
+          noLink: true
+        });
+      }
+    }
+  }
+
+  private startTabManager(initialSession?: BrowserSessionSnapshot): void {
+    const profileId = this.activeProfile.id;
+    const createEngine = (): ReturnType<BrowserEngineFactory> => this.createEngineForProfile(profileId);
+    this.tabManager = new TabManager(this.window, BROWSER_CHROME_HEIGHT, createEngine, START_URL);
+    this.unsubscribe = this.tabManager.onChange((tabs) => {
+      this.pushState();
+      this.persistTabState(tabs);
+      this.recordChangedUrls(tabs.tabs.map((tab) => ({ id: tab.id, url: tab.url })));
+    });
+
+    if (initialSession?.tabs.length) {
+      initialSession.tabs.forEach((url, index) => this.lastUrlByTab.set(`tab-${index + 1}`, url));
+      this.tabManager.restoreTabs(initialSession.tabs, initialSession.activeTabIndex);
+    } else {
+      this.tabManager.createTab(START_URL);
+    }
+    this.lastSavedSessionKey = this.sessionKey();
+  }
+
+  private updateWindowTitle(): void {
+    if (!this.window.isDestroyed()) this.window.setTitle(`${this.activeProfile.name} — Open Browser`);
   }
 
   async clearHistoryAndSession(): Promise<void> {

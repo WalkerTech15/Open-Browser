@@ -37,7 +37,7 @@ Sources: `VISION.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `d
 
 ## 2. V1 scope
 
-**Current prototype.** None defined. `docs/ROADMAP.md` lists "Planned (next milestones, roughly in order)": Tabs, Sessions, Profiles, Workspaces, Privacy controls, Signed updates. It does not call any of them V1, and it defines no release criteria (although `VISION.md` says release criteria belong in the roadmap).
+**Current prototype.** None defined. `docs/ROADMAP.md` lists upcoming milestones: Workspaces, Privacy controls, and Signed updates. It does not call any of them V1, and it defines no release criteria (although `VISION.md` says release criteria belong in the roadmap).
 
 **Confirmed V1 requirements.** None yet.
 
@@ -46,7 +46,7 @@ Sources: `VISION.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `d
 
 ## 3. V1 non-goals
 
-**Established non-goals for the *current milestone*** (`docs/ROADMAP.md`): profiles/workspaces UI, Gecko, auto-updates, telemetry, AI features, code signing, publishing credentials, macOS/Linux packaging, website deployment.
+**Established non-goals for the *current milestone*** (`docs/ROADMAP.md`): profile deletion/custom profile names, workspaces UI, Gecko, auto-updates, telemetry, AI features, code signing, publishing credentials, macOS/Linux packaging, website deployment.
 
 **V1 non-goals.** Not defined. Several items above are also "Planned", so the current-milestone list cannot simply be reused as the V1 list.
 
@@ -54,9 +54,17 @@ Sources: `VISION.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `d
 
 ## 4. Profiles
 
-**Current prototype.** No user-selectable profiles or per-profile isolation.
-The current app-wide tab and history data is persisted as described in §5;
-this is not profile storage.
+**Current prototype.** Users can create and switch local profiles from the
+toolbar's native Profiles menu. The first run creates a `Personal` profile;
+new profiles receive generated names (`Profile 2`, etc.). Profile deletion
+and custom naming are not implemented. The active profile is remembered.
+
+Each profile keeps separate Chromium cookies/site storage and separate
+browsing history plus automatically restored tabs. Personal reuses the
+original Electron default Chromium session and `browser-data.json` path, so
+existing site data, history, and saved tabs remain in place. Additional
+profiles use a persistent Chromium partition and a per-profile JSON file.
+There is no profile deletion. See [`ADR-003`](decisions/ADR-003-profile-isolation.md).
 
 **Established constraints.**
 - Profiles are "multiple isolated user identities in one install" (`docs/ROADMAP.md` → Planned).
@@ -68,9 +76,8 @@ this is not profile storage.
 - Profile isolation is an ADR-level topic (`docs/COLLABORATION.md` §12).
 
 **Not defined.**
-- OQ-02: What data a profile contains and what "isolated" means concretely (cookies, history, settings, permissions, extensions).
-- OQ-03: Whether the user must create or choose a profile on first run.
-- ND-04: Profile limits, naming, and deletion behavior.
+- OQ-02: Whether permissions, settings, and future extension data are profile-specific.
+- ND-04: Profile limits, custom naming, and deletion behavior. Deletion is intentionally not implemented in this prototype.
 
 ## 5. Sessions
 
@@ -82,7 +89,7 @@ loaded. The toolbar's confirmed Clear history action removes history and
 saved restore tabs together, while leaving current pages open. See ADR-002.
 
 **Established constraints.**
-- Sessions are persisted browsing/session data; per-profile storage partitioning remains planned (`docs/ROADMAP.md`).
+- Sessions are persisted browsing/session data; each profile has its own history and restorable tabs (`ADR-003`).
 - Startup should restore tab metadata first and load only what is necessary (`VISION.md` → Performance direction).
 - Users must be able to delete and export their data (`VISION.md`; `AI_WORKFLOW.md` → Privacy rules).
 
@@ -461,10 +468,13 @@ There are 27 unresolved decisions; ND-05 is recorded below as resolved.
 - QV-01 Toolbar accessibility status (§28). Reclassified from OQ-43.
 
 ### OPEN QUESTION
-- OQ-01 to OQ-47 are listed inline in the sections above, except OQ-04, OQ-05, and OQ-12 (resolved for the current implementation by ADR-002 and ADR-001) and OQ-43 (reclassified as QV-01). This leaves 43 open questions. Section numbers: audiences (§1), profiles (§4), workspaces (§6), tabs (§7), layouts (§8), search (§9), personalization (§10–12), privacy (§13), security (§14), ad/tracker (§16), sync (§17), restore (§18), AI (§19), performance (§20–21), developer (§23), import/export (§27), accessibility (§28), installer (§30), updates (§31).
+- OQ-01 to OQ-47 are listed inline in the sections above, except OQ-03 (resolved for the current prototype by ADR-003), OQ-04, OQ-05, and OQ-12 (resolved for the current implementation by ADR-002 and ADR-001), and OQ-43 (reclassified as QV-01). OQ-02 is still open for permission settings, app settings, and future extension data. This leaves 42 open questions. Section numbers: audiences (§1), profiles (§4), workspaces (§6), tabs (§7), layouts (§8), search (§9), personalization (§10–12), privacy (§13), security (§14), ad/tracker (§16), sync (§17), restore (§18), AI (§19), performance (§20–21), developer (§23), import/export (§27), accessibility (§28), installer (§30), updates (§31).
 
 ### Resolved user decisions
 - ND-05 — History remains until the user clears it; startup restores tabs automatically. Clearing history also removes the saved tab set. Recorded in ADR-002. This does not decide V1 scope.
+- OQ-02 — Cookies/site storage, browsing history, and restored tabs are isolated by profile for the current prototype. Permission settings, app settings, and future extension data remain undecided. Recorded in ADR-003.
+- OQ-03 — The app creates Personal automatically on first run, creates new profiles using generated names, and remembers the active profile. Resolved for the current prototype by ADR-003.
+- ND-04 — No profile deletion is available in the current prototype. Limits, custom naming, and deletion behavior remain user decisions; see ADR-003.
 
 ## Conflicts found with existing documents
 

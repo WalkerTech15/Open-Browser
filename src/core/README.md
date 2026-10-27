@@ -10,5 +10,6 @@ if the underlying engine (Chromium/Gecko) changed.
   why this file is the main navigation-safety control.
 - `tabs/` — live tab state and active-tab selection; see `tabs/README.md`.
 - `sessions/` — local history and restorable-tab data; see `sessions/README.md`.
+- `profiles/` — local profile registry and isolated session-data locations.
 
 See `docs/ARCHITECTURE.md` for the full picture.

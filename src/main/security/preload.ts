@@ -19,7 +19,8 @@ const IpcChannel = {
   ActivateTab: 'tabs:activate',
   CloseTab: 'tabs:close',
   TabsState: 'tabs:state',
-  HistoryOpen: 'history:open'
+  HistoryOpen: 'history:open',
+  ProfilesOpen: 'profiles:open'
 } as const;
 
 // SECURITY: this is the entire API surface exposed to every renderer. It is
@@ -62,6 +63,9 @@ const openBrowserApi: OpenBrowserApi = {
   },
   showHistory(): void {
     ipcRenderer.send(IpcChannel.HistoryOpen);
+  },
+  showProfiles(): void {
+    ipcRenderer.send(IpcChannel.ProfilesOpen);
   }
 };
 

@@ -42,8 +42,10 @@ one browser window and no profile isolation.
   deletion behavior before applying it.
 - URL paths and query parameters can still contain sensitive information;
   this feature does not inspect query strings or encrypt the local JSON file.
-- The current schema is app-wide, not per-profile. Adding profiles, export,
-  or sync requires a separately reviewed design and migration plan.
+- At the time this ADR was accepted, session data was app-wide. Profile
+  isolation for the current prototype is defined by
+  [`ADR-003`](ADR-003-profile-isolation.md). Export or sync still requires a
+  separately reviewed design and migration plan.
 
 ## Security impact
 Only the trusted main process reads/writes the file. The sandboxed toolbar has

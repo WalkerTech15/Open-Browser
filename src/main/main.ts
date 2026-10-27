@@ -1,18 +1,17 @@
 import { app, BrowserWindow } from 'electron';
 import { createMainWindow } from './windows/createMainWindow';
 import { registerNavigationIpcHandlers } from './security/ipcHandlers';
-import * as path from 'node:path';
-import { SessionStore } from '../core/sessions/SessionStore';
+import { ProfileStore } from '../core/profiles/ProfileStore';
 
 registerNavigationIpcHandlers();
 
-let sessionStore: SessionStore | null = null;
+let profileStore: ProfileStore | null = null;
 let allowQuitAfterFlush = false;
 
 app.on('before-quit', (event) => {
-  if (!sessionStore || allowQuitAfterFlush) return;
+  if (!profileStore || allowQuitAfterFlush) return;
   event.preventDefault();
-  void sessionStore.flush().catch((error) => {
+  void profileStore.flushSessions().catch((error) => {
     console.error('Could not finish saving browser data before exit.', error);
   }).finally(() => {
     allowQuitAfterFlush = true;
@@ -21,13 +20,17 @@ app.on('before-quit', (event) => {
 });
 
 app.whenReady().then(async () => {
-  sessionStore = new SessionStore(path.join(app.getPath('userData'), 'browser-data.json'));
+  profileStore = new ProfileStore(app.getPath('userData'));
+  const activeProfile = await profileStore.load();
+  const sessionStore = profileStore.sessionStore(activeProfile.id);
   const savedData = await sessionStore.load();
-  createMainWindow(sessionStore, savedData);
+  createMainWindow(sessionStore, savedData, profileStore, activeProfile);
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0 && sessionStore) {
-      createMainWindow(sessionStore, sessionStore.snapshot());
+    if (BrowserWindow.getAllWindows().length === 0 && profileStore) {
+      const profile = profileStore.activeProfile();
+      const store = profileStore.sessionStore(profile.id);
+      createMainWindow(store, store.snapshot(), profileStore, profile);
     }
   });
 });

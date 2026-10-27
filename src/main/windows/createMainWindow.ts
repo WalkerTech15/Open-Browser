@@ -4,6 +4,8 @@ import { SECURE_WEB_PREFERENCES } from '../../shared/constants/secureWebPreferen
 import { ChromiumEngine } from '../../engines/chromium/ChromiumEngine';
 import { BrowserWindowController } from '../../core/browser/BrowserWindowController';
 import type { BrowserSessionSnapshot, SessionStore } from '../../core/sessions/SessionStore';
+import type { BrowserProfile } from '../../shared/types/browserProfiles';
+import type { ProfileStore } from '../../core/profiles/ProfileStore';
 
 // app.getAppPath() (rather than a chain of __dirname + '..') keeps this
 // correct regardless of how deep this compiled file lives under dist/, and
@@ -15,7 +17,12 @@ const RENDERER_ENTRY = path.join(app.getAppPath(), 'src/renderer/layout/index.ht
  * support is future work — see src/core/tabs/README.md). The window's
  * webPreferences use the shared hardened policy; see docs/SECURITY.md.
  */
-export function createMainWindow(sessionStore?: SessionStore, initialSession?: BrowserSessionSnapshot): BrowserWindow {
+export function createMainWindow(
+  sessionStore?: SessionStore,
+  initialSession?: BrowserSessionSnapshot,
+  profileStore?: ProfileStore,
+  activeProfile: BrowserProfile = { id: 'personal', name: 'Personal', createdAt: 0 }
+): BrowserWindow {
   const window = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -27,7 +34,16 @@ export function createMainWindow(sessionStore?: SessionStore, initialSession?: B
     }
   });
 
-  new BrowserWindowController(window, () => new ChromiumEngine(), sessionStore, initialSession);
+  new BrowserWindowController(
+    window,
+    (profileId) => new ChromiumEngine(
+      profileId === 'personal' ? undefined : `persist:open-browser-${profileId}`
+    ),
+    sessionStore,
+    initialSession,
+    profileStore,
+    activeProfile
+  );
 
   void window.loadFile(RENDERER_ENTRY);
 

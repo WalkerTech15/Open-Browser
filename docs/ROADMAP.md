@@ -5,7 +5,9 @@
 A single-window, Chromium-only browser with a classic horizontal tab strip.
 Tabs can be created, switched, and closed. Pages stay alive while their tabs
 are inactive. Local history and automatic tab restoration are implemented.
-Profiles and extensions are not implemented.
+Basic profiles can be created and switched; each keeps separate site storage,
+history, and restored tabs. Profile deletion and custom names are not yet
+implemented. Extensions are not implemented.
 
 ## Implemented
 
@@ -18,6 +20,9 @@ Profiles and extensions are not implemented.
 - Inactive restored tabs load only when selected
 - The native History menu offers a confirmed action to clear history and saved
   restore tabs; current pages stay open
+- Basic local profiles: Personal is created by default, additional profiles
+  can be created and switched, and each uses a separate Chromium storage
+  partition plus a separate history/session file
 - Loading and error states surfaced in the toolbar
 - Hardened renderer settings (context isolation, no Node integration,
   sandboxing) shared across every webContents
@@ -26,7 +31,6 @@ Profiles and extensions are not implemented.
 
 ## Planned (next milestones, roughly in order)
 
-- **Profiles** — multiple isolated user identities in one install
 - **Workspaces** — grouping tabs/sessions for different contexts
 - **Privacy controls** — tracker/ad blocking, a real Content-Security-Policy,
   permission-request handling (`src/services/permissions/`)
@@ -52,6 +56,6 @@ design pass before starting: extension support, a settings UI
 ## Non-goals for the current milestone
 
 These are deliberately out of scope right now, not forgotten:
-profiles/workspaces UI, Gecko, auto-updates, telemetry, AI
+profile deletion/custom naming, workspaces UI, Gecko, auto-updates, telemetry, AI
 features, code signing, publishing credentials, macOS/Linux packaging,
 website deployment.

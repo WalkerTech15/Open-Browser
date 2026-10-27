@@ -47,9 +47,9 @@ duplicated `webPreferences` object literals.
 
 ## IPC boundary — Implemented
 
-All renderer↔main communication goes through eleven named channels in
+All renderer↔main communication goes through twelve named channels in
 `src/shared/constants/ipcChannels.ts`: navigation and tab commands, state
-updates, and one fixed command to show the native history menu. There is no
+updates, and fixed commands to show the native history and profile menus. There is no
 generic IPC passthrough and no dynamic channel names.
 
 - `src/main/security/preload.ts` exposes only fixed typed operations via
@@ -68,12 +68,14 @@ generic IPC passthrough and no dynamic channel names.
 **Partial:** payload validation at the IPC layer is minimal (type-only) —
 the real safety net is the navigation-target validation described next.
 
-History data is written only by the trusted main process to the app's local
-`userData` directory. The stored schema accepts only HTTP(S) URLs, strips
-URL-embedded usernames and passwords, and stores visit timestamps. It does
-not encrypt the history file, inspect query-string secrets, or store page
-contents/cookies. History has no time-based expiry; the user can clear it
-along with the saved tab set from the toolbar. Atomic replacement protects
+Profile metadata and history data are written only by the trusted main process
+to the app's local `userData` directory. Each profile has its own HTTP(S)-only
+history/session file; URL-embedded usernames and passwords are stripped.
+Additional profiles use separate persistent Chromium partitions for cookies
+and site storage. Personal retains Electron's original default Chromium
+session and `browser-data.json` path. The files are not encrypted. History has
+no time-based expiry; the user can clear it along with the saved tab set for
+the active profile from the toolbar. Atomic replacement protects
 against a partial JSON write, and malformed data is ignored with a warning.
 
 ## Navigation validation — Implemented

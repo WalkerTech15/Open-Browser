@@ -19,10 +19,11 @@ what's implemented vs. planned see `docs/ROADMAP.md`.
 │       │      the ONLY ipcMain listeners — validated, sender-scoped                            │
 │       │                                                                                      │
 │       └─ src/core/browser/BrowserWindowController.ts                                         │
-│              owns one window's TabManager; persists tabs/history and pushes state over IPC    │
+│              owns one window's active profile and TabManager; routes profile switching        │
 │                     │                                                                        │
-│                     └─ src/core/tabs/TabManager.ts (engines created on demand; one visible)   │
-│                     └─ src/core/sessions/SessionStore.ts (local JSON in app userData)          │
+│                     ├─ src/core/profiles/ProfileStore.ts (registry + isolated data paths)     │
+│                     ├─ src/core/tabs/TabManager.ts (engines created on demand; one visible)   │
+│                     └─ src/core/sessions/SessionStore.ts (local profile JSON data)             │
 │                     │                                                                        │
 │                     ▼                                                                        │
 │              src/engines/interface/BrowserEngine.ts  (the contract)                          │
@@ -62,14 +63,18 @@ narrow `window.openBrowser` API the preload script exposes. See
 bundler, so no runtime `import`/`export` in these files.
 
 **Core (`src/core/`)** holds browsing concepts that don't depend on which
-engine is running: `browser/` (window-level wiring), `tabs/` (tab collection
-and active selection), `sessions/` (local tab/history persistence), and
+engine is running: `browser/` (window-level wiring), `profiles/` (local
+profile registry and data paths), `tabs/` (tab collection and active
+selection), `sessions/` (local tab/history persistence), and
 `navigation/` (interpreting address-bar input). `SessionStore` uses Node's
 filesystem APIs in the trusted main process; it stores versioned JSON under
-Electron's per-install `userData` directory. It stores URLs and visit times,
-not page contents, cookies, or URL-embedded credentials. Chromium separately
-uses its default session for site cookies and storage. The user can clear
-history and the saved restore snapshot together. `navigation/` remains pure and
+Electron's per-install `userData` directory. The Personal profile reuses the
+legacy `browser-data.json` path and Chromium's default session to preserve
+existing data. Additional profiles use a UUID-derived persistent Chromium
+partition and their own `profiles/<id>/browser-data.json`. Profile data stores
+URLs and visit times, not page contents or URL-embedded credentials. The user
+can clear history and the saved restore snapshot together for the active
+profile. `navigation/` remains pure and
 engine-free, which is why it is unit-tested directly.
 
 **Engine abstraction (`src/engines/`)** exists so the rendering engine is
@@ -115,11 +120,13 @@ main window and the Chromium engine need the identical policy object).
 
 ## Session persistence
 
-At startup, the main process reads `browser-data.json` from
-`app.getPath('userData')`. The selected tab is loaded; other restored tabs keep
-their URL metadata and load when first selected. The main process records
-top-level navigations and writes history plus the open-tab snapshot atomically
-through a temporary file and rename. The preload exposes only fixed,
-sender-scoped history operations; website content views have no preload.
-Details and trade-offs are recorded in
-[`decisions/ADR-002-local-session-persistence.md`](decisions/ADR-002-local-session-persistence.md).
+At startup, the main process reads the active profile from `profiles.json`.
+Personal continues to use `browser-data.json`; other profiles use
+`profiles/<id>/browser-data.json`. The selected tab is loaded; other restored
+tabs keep their URL metadata and load when first selected. The main process
+records top-level navigations and writes history plus the open-tab snapshot
+atomically through a temporary file and rename. The preload exposes only
+fixed, sender-scoped history and profile-menu commands; website content views
+have no preload. Details and trade-offs are recorded in
+[`decisions/ADR-002-local-session-persistence.md`](decisions/ADR-002-local-session-persistence.md)
+and [`decisions/ADR-003-profile-isolation.md`](decisions/ADR-003-profile-isolation.md).

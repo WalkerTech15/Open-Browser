@@ -32,6 +32,8 @@ function escapeHtml(value: string): string {
 export class ChromiumEngine implements BrowserEngine {
   readonly name = 'chromium';
 
+  constructor(private readonly partition?: string) {}
+
   private view: WebContentsView | null = null;
   private window: BrowserWindow | null = null;
   private toolbarHeight = 0;
@@ -51,7 +53,10 @@ export class ChromiumEngine implements BrowserEngine {
     this.toolbarHeight = toolbarHeight;
 
     const view = new WebContentsView({
-      webPreferences: SECURE_WEB_PREFERENCES
+      webPreferences: {
+        ...SECURE_WEB_PREFERENCES,
+        ...(this.partition ? { partition: this.partition } : {})
+      }
     });
     this.view = view;
 

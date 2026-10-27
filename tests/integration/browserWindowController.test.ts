@@ -87,7 +87,8 @@ function createFakeWindow(): {
     },
     on: (event: string, handler: () => void) => {
       if (event === 'closed') closedHandler = handler;
-    }
+    },
+    setTitle: (_title: string) => {}
     // deliberately no `off` — BrowserWindowController never removes its own
     // 'closed' listener, matching the real BrowserWindow API it depends on.
   } as unknown as BrowserWindow;
@@ -159,7 +160,53 @@ test('BrowserWindowController: persists navigation history and the active tab sn
     await controller.clearHistoryAndSession();
     assert.deepEqual(store.snapshot().tabs, []);
     assert.deepEqual(store.history(), []);
+    await store.flush();
     fakeWindow.close();
+  } finally {
+    await fs.rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('BrowserWindowController: switching profiles restores separate history and tabs', async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'open-browser-profile-switch-'));
+  try {
+    const { ProfileStore } = await import('../../src/core/profiles/ProfileStore');
+    const profiles = new ProfileStore(directory);
+    const personal = await profiles.load();
+    const personalStore = profiles.sessionStore(personal.id);
+    const personalSession = await personalStore.load();
+    const fakeWindow = createFakeWindow();
+    const engineProfiles: string[] = [];
+    const controller = new BrowserWindowController(
+      fakeWindow.window,
+      (profileId) => {
+        engineProfiles.push(profileId);
+        return createFakeEngine().engine;
+      },
+      personalStore,
+      personalSession,
+      profiles,
+      personal
+    );
+
+    controller.handleNavigate('https://personal.example/');
+    await personalStore.flush();
+    const workProfile = await profiles.createProfile();
+    await controller.switchProfile(workProfile.id);
+    assert.equal(profiles.activeProfile().id, workProfile.id);
+    assert.ok(engineProfiles.includes(workProfile.id));
+
+    const workStore = profiles.sessionStore(workProfile.id);
+    controller.handleNavigate('https://work.example/');
+    await workStore.flush();
+    assert.ok(workStore.history().some(({ url }) => url === 'https://work.example/'));
+    assert.equal(workStore.history().some(({ url }) => url === 'https://personal.example/'), false);
+
+    await controller.switchProfile(personal.id);
+    assert.ok(personalStore.history().some(({ url }) => url === 'https://personal.example/'));
+    assert.equal(personalStore.history().some(({ url }) => url === 'https://work.example/'), false);
+    fakeWindow.close();
+    await profiles.flushSessions();
   } finally {
     await fs.rm(directory, { recursive: true, force: true });
   }

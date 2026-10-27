@@ -17,11 +17,13 @@ The current prototype provides:
 - Back, forward, reload, and stop controls
 - Automatic local restoration of open tabs and a native browsing-history menu;
   clearing history also removes the saved restore tabs
+- Basic profiles: keep cookies/site storage, history, and restored tabs
+  separate; create and switch profiles from the toolbar menu
 - Hardened renderer settings and a narrow preload API
 - Unit and integration coverage for navigation and window lifecycle behavior
 - A GitHub Actions workflow that builds a Windows installer artifact
 
-Profiles, workspaces, Gecko support, downloads, permissions,
+Profile deletion/custom profile names, workspaces, Gecko support, downloads, permissions,
 automatic updates, and advanced privacy controls are not implemented yet.
 
 ## Getting started
@@ -51,7 +53,8 @@ src/
 │   ├── browser/       wires one engine to one window
 │   ├── navigation/     address-bar input → safe URL or search
 │   ├── tabs/           in-memory tab collection and active-tab selection
-│   └── sessions/        local history and restorable-tab persistence
+│   ├── sessions/        local history and restorable-tab persistence
+│   └── profiles/       profile registry and per-profile data paths
 ├── engines/      The swappable rendering-engine abstraction
 │   ├── interface/      the BrowserEngine contract
 │   ├── chromium/        the only implementation today

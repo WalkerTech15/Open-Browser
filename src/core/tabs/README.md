@@ -8,6 +8,8 @@ stay alive, so switching tabs preserves page state.
 `BrowserWindowController` connects tab actions to the toolbar IPC API. The
 tab manager owns live tab state; `SessionStore` separately persists tab URLs
 and restores inactive tabs without creating their native views until selected.
-Sleeping/discarding, profiles, and
-workspaces are separate future work. The architectural choice
+Sleeping/discarding and workspaces are separate future work. Profiles now
+isolate cookies/site storage, history, and restored tabs; see
+[`ADR-003`](../../../docs/decisions/ADR-003-profile-isolation.md). The tab
+visibility architectural choice
 is recorded in [`docs/decisions/ADR-001-tab-engine-visibility.md`](../../../docs/decisions/ADR-001-tab-engine-visibility.md).
