@@ -32,6 +32,9 @@ Extensions are not implemented.
   sandboxing) shared across every webContents
 - Temporary Allow once / Block prompts for camera, microphone, location, and
   notifications from an eligible active page; no permission choices are saved
+- Cautious camera/microphone reminders after approval: tab badges stay until
+  the tab closes, while a browser-session warning stays until the app exits.
+  These are not live capture indicators and can remain after access stops.
 - Validated, narrow IPC boundary between renderer and main; commands require
   the registered toolbar window's main frame at its exact local file URL
 - Windows CI build producing a downloadable (unsigned) installer artifact
@@ -42,6 +45,8 @@ Extensions are not implemented.
   settings. The prototype has temporary prompts; other permission types are
   denied (`src/services/permissions/`). The toolbar document has a restrictive
   Content Security Policy; website content policies are a separate concern.
+- **Accurate capture status** — investigate a trusted way to show when camera
+  and microphone capture actually starts and stops, including popups.
 - **Signed updates** — code-signing the Windows installer and building a
   real auto-update feed (e.g. `electron-updater` against a trusted host);
   see `docs/SECURITY.md`'s "Supply chain / update integrity" section for why

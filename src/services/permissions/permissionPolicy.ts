@@ -1,10 +1,12 @@
 import type { BrowserWindow, PermissionRequest, Session, WebContents } from 'electron';
+import type { RequestedMediaType } from '../../shared/types/mediaAccess';
 
 export type PromptablePermission = 'media' | 'geolocation' | 'notifications';
 export interface PermissionPrompt {
   origin: string;
   permission: PromptablePermission;
   description: string;
+  mediaTypes?: readonly RequestedMediaType[];
 }
 export type AskPermission = (window: BrowserWindow, prompt: PermissionPrompt) => Promise<boolean>;
 const pendingWindows = new WeakSet<BrowserWindow>();
@@ -16,6 +18,7 @@ interface ContentContext {
   generation: number;
   notificationOrigin: string | null;
   cancelPending: (() => void) | null;
+  onMediaAllowed: (types: readonly RequestedMediaType[]) => void;
 }
 
 /** Session-local policy. Grants are held in memory only for the current tab. */
@@ -39,9 +42,9 @@ export class PermissionPolicy {
     session.setDevicePermissionHandler(() => false);
   }
 
-  track(contents: WebContents, window: BrowserWindow): { setActive(active: boolean): void; dispose(): void } {
+  track(contents: WebContents, window: BrowserWindow, onMediaAllowed: (types: readonly RequestedMediaType[]) => void): { setActive(active: boolean): void; dispose(): void } {
     const contentId = contents.id;
-    const context: ContentContext = { contents, window, active: false, generation: 0, notificationOrigin: null, cancelPending: null };
+    const context: ContentContext = { contents, window, active: false, generation: 0, notificationOrigin: null, cancelPending: null, onMediaAllowed };
     this.contexts.set(contentId, context);
     const onNavigation = (_event: Electron.Event, _url: string, _inPlace: boolean, isMainFrame: boolean) => {
       if (isMainFrame) this.invalidate(context);
@@ -87,6 +90,15 @@ export class PermissionPolicy {
       if (completed) return;
       completed = true;
       context.cancelPending = null;
+      if (allowed && prompt.permission === 'media') {
+        try {
+          if (!prompt.mediaTypes?.length || typeof context.onMediaAllowed !== 'function') allowed = false;
+          else context.onMediaAllowed(prompt.mediaTypes);
+        } catch {
+          // Without the warning, granting capture would hide a privacy risk.
+          allowed = false;
+        }
+      }
       if (allowed && prompt.permission === 'notifications') context.notificationOrigin = origin;
       callback(allowed);
     };
@@ -117,5 +129,5 @@ function describeRequest(origin: string, permission: string, details: Permission
   if (!media.mediaTypes?.length || media.mediaTypes.some(type => type !== 'audio' && type !== 'video')) return null;
   const audio = media.mediaTypes.includes('audio');
   const video = media.mediaTypes.includes('video');
-  return { origin, permission, description: audio && video ? 'your camera and microphone' : audio ? 'your microphone' : 'your camera' };
+  return { origin, permission, description: audio && video ? 'your camera and microphone' : audio ? 'your microphone' : 'your camera', mediaTypes: [...media.mediaTypes] };
 }

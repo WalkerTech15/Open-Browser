@@ -14,8 +14,11 @@ Allow once / Block permission milestone. This does not decide V1 membership.
 - Each Chromium session has its own policy; tracked tabs are scoped to that
   session. There are no saved grants or changes to profile storage formats.
 - Camera, microphone, and location approval applies to the current request.
-  The page may keep an active stream/watch until it stops or its tab closes,
-  even after a tab switch. A capture indicator is not yet implemented.
+  A stream/watch may continue after a tab switch. A fake-microphone test later
+  observed a popup copy still live just after the original page was destroyed;
+  a separate test observed the copy ended after tab closure. To be safe, close all Open Browser windows when finished. A
+  An accurate live capture indicator is not yet implemented. The user selected a
+  conservative session reminder instead; see ADR-006.
 - Notification checks are allowed only for the approved active tab and origin;
   navigation, switching tabs, and closing revoke that in-memory grant.
 - A pending request fails closed if the tab navigates, becomes inactive, closes,

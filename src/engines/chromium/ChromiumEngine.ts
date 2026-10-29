@@ -6,6 +6,7 @@ import { isNavigableUrl } from '../../core/navigation/navigation';
 import { SECURE_WEB_PREFERENCES } from '../../shared/constants/secureWebPreferences';
 import { PermissionPolicy } from '../../services/permissions/permissionPolicy';
 import { configureDownloadSaveDialogs } from '../../services/downloads/saveDialog';
+import { captureWarningStore } from '../../services/permissions/captureWarning';
 
 const configuredSessions = new WeakMap<Electron.Session, PermissionPolicy>();
 
@@ -76,7 +77,7 @@ export class ChromiumEngine implements BrowserEngine {
             : `Allow ${request.origin} to access ${request.description}?`,
           detail: request.permission === 'notifications'
             ? 'Notifications are allowed while this tab stays active on this page.'
-            : 'This allows the current request. The site can keep using access until it stops or the tab closes.',
+            : 'This allows the current request. Access may continue in another browser window after this tab closes. To be safe, close all Open Browser windows.',
           buttons: ['Block', 'Allow once'], defaultId: 0, cancelId: 0, noLink: true
         });
         return result.response === 1;
@@ -84,7 +85,16 @@ export class ChromiumEngine implements BrowserEngine {
       configureDownloadSaveDialogs(browserSession, app.getPath('downloads'));
       configuredSessions.set(browserSession, permissionPolicy);
     }
-    this.permissionTracking = permissionPolicy.track(view.webContents, window);
+    this.permissionTracking = permissionPolicy.track(view.webContents, window, (types) => {
+      // Set both warnings before allowing Chromium to start capture. They are
+      // conservative and intentionally remain after a stream ends or navigation.
+      captureWarningStore.mark(types);
+      const previous = this.state.possibleMediaAccess;
+      this.updateState({ possibleMediaAccess: {
+        camera: !!previous?.camera || types.includes('video'),
+        microphone: !!previous?.microphone || types.includes('audio')
+      } });
+    });
 
     window.contentView.addChildView(view);
     this.layout();

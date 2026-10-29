@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import type { BrowserWindow, Session, WebContents } from 'electron';
 import { PermissionPolicy, type PermissionPrompt } from '../../src/services/permissions/permissionPolicy';
+import type { RequestedMediaType } from '../../src/shared/types/mediaAccess';
 
 type RequestHandler = NonNullable<Parameters<Session['setPermissionRequestHandler']>[0]>;
 type CheckHandler = NonNullable<Parameters<Session['setPermissionCheckHandler']>[0]>;
@@ -27,9 +28,10 @@ function fixture() {
   const prompts: Array<{ prompt: PermissionPrompt; resolve: (allow: boolean) => void }> = [];
   const policy = new PermissionPolicy(session, async (_window, prompt) => new Promise(resolve => prompts.push({ prompt, resolve })));
   const contents = new FakeContents(1);
+  const mediaAllowed: RequestedMediaType[][] = [];
   const state = { focused: true, destroyed: false };
   const window = { isFocused: () => state.focused, isDestroyed: () => state.destroyed } as unknown as BrowserWindow;
-  const tracking = policy.track(contents as unknown as WebContents, window);
+  const tracking = policy.track(contents as unknown as WebContents, window, types => { mediaAllowed.push([...types]); });
   tracking.setActive(true);
   const request = (permission: Parameters<RequestHandler>[1], details: Partial<Electron.PermissionRequest & Electron.MediaAccessPermissionRequest> = {}) => {
     const responses: boolean[] = [];
@@ -40,7 +42,7 @@ function fixture() {
   };
   const check = (permission: Parameters<CheckHandler>[1], origin = 'https://example.com', main = true) =>
     handlers.check!(contents as unknown as WebContents, permission, origin, { isMainFrame: main, requestingUrl: contents.url });
-  return { policy, handlers, prompts, contents, window, state, tracking, request, check };
+  return { policy, handlers, prompts, contents, window, state, tracking, request, check, mediaAllowed };
 }
 
 test('camera and microphone access needs approval for each request', async () => {
@@ -52,6 +54,7 @@ test('camera and microphone access needs approval for each request', async () =>
   f.prompts[0].resolve(true);
   await tick();
   assert.deepEqual(first, [true]);
+  assert.deepEqual(f.mediaAllowed, [['audio', 'video']]);
   assert.equal(f.check('media'), false);
   const second = f.request('media', { mediaTypes: ['audio'] });
   await tick();
@@ -59,6 +62,7 @@ test('camera and microphone access needs approval for each request', async () =>
   f.prompts[1].resolve(false);
   await tick();
   assert.deepEqual(second, [false]);
+  assert.deepEqual(f.mediaAllowed, [['audio', 'video']]);
   f.tracking.dispose();
 });
 
@@ -133,7 +137,7 @@ test('different profile sessions cannot stack prompts on the same window', async
   const first = fixture();
   const second = fixture();
   second.tracking.dispose();
-  const secondTracking = second.policy.track(second.contents as unknown as WebContents, first.window);
+  const secondTracking = second.policy.track(second.contents as unknown as WebContents, first.window, () => {});
   secondTracking.setActive(true);
   const firstAnswer = first.request('notifications');
   await tick();
@@ -150,6 +154,19 @@ test('different profile sessions cannot stack prompts on the same window', async
   assert.deepEqual(nextAnswer, [true]);
   first.tracking.dispose();
   secondTracking.dispose();
+});
+
+test('media access is denied if the warning cannot be recorded', async () => {
+  const f = fixture();
+  f.tracking.dispose();
+  const tracking = f.policy.track(f.contents as unknown as WebContents, f.window, () => { throw new Error('warning failed'); });
+  tracking.setActive(true);
+  const answer = f.request('media', { mediaTypes: ['video'] });
+  await tick();
+  f.prompts[0].resolve(true);
+  await tick();
+  assert.deepEqual(answer, [false]);
+  tracking.dispose();
 });
 
 test('late requests and checks reject destroyed contents without reading native fields', () => {

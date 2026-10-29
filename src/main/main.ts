@@ -2,7 +2,9 @@ import { app, BrowserWindow } from 'electron';
 import { createMainWindow } from './windows/createMainWindow';
 import { registerNavigationIpcHandlers } from './security/ipcHandlers';
 import { ProfileStore } from '../core/profiles/ProfileStore';
+import { registerCaptureWarningTitles } from './windows/captureWarningTitles';
 
+registerCaptureWarningTitles(app);
 registerNavigationIpcHandlers();
 
 let profileStore: ProfileStore | null = null;

@@ -137,9 +137,18 @@ Unsupported permissions, device access, background tabs, child frames, and
 requests without a reliable origin are denied. There is no persistent allowlist.
 
 Media and location approval applies to that request. An already active camera,
-microphone, or location stream/watch can continue after a tab switch until the
-site stops it or the tab closes; the prototype does not yet show a capture
-indicator. Notification access lasts while that tab remains active on the
+microphone, or location stream/watch can continue after a tab switch. In an
+isolated fake-microphone test, a site copied a stream into a popup and its copy
+was briefly live after the original page was destroyed, before the popup closed.
+A separate test observed the copy ended after the tab closed. To be safe, close all Open Browser
+windows when finished. After camera or microphone approval, a tab badge and a
+browser-session warning state that access **may** be in use. The session warning
+also appears in native window titles, including popups, and remains until the
+application exits. These warnings are conservative reminders, not live capture
+status: they can remain after the device stops or fails to start, and native
+window titles may not be visible in fullscreen. No exact capture indicator is
+implemented. See `docs/decisions/ADR-006-conservative-media-warning.md`.
+Notification access lasts while that tab remains active on the
 current page, and is revoked when it navigates, becomes inactive, or closes.
 Pending approvals are denied if the page changes or closes. The operating system
 may still deny access after the browser approves a request. See

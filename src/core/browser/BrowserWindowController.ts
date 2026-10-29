@@ -7,6 +7,7 @@ import { TabManager, type BrowserEngineFactory } from '../tabs/TabManager';
 import { SessionStore, type BrowserSessionSnapshot } from '../sessions/SessionStore';
 import { ProfileStore } from '../profiles/ProfileStore';
 import type { BrowserProfile } from '../../shared/types/browserProfiles';
+import { captureWarningStore, warningWindowTitle } from '../../services/permissions/captureWarning';
 
 const BROWSER_CHROME_HEIGHT = 96;
 const START_URL = 'https://duckduckgo.com';
@@ -27,6 +28,7 @@ export class BrowserWindowController {
   private readonly webContentsId: number;
   private tabManager!: TabManager;
   private unsubscribe: () => void = () => {};
+  private unsubscribeCaptureWarning: () => void = () => {};
   private disposed = false;
   private sessionStore?: SessionStore;
   private readonly lastUrlByTab = new Map<string, string>();
@@ -49,6 +51,10 @@ export class BrowserWindowController {
     window.webContents.once('did-finish-load', () => this.pushState());
     window.on('closed', () => this.dispose());
     this.startTabManager(initialSession);
+    this.unsubscribeCaptureWarning = captureWarningStore.subscribe(() => {
+      this.updateWindowTitle();
+      this.pushState();
+    });
     this.updateWindowTitle();
   }
 
@@ -293,7 +299,9 @@ export class BrowserWindowController {
   }
 
   private updateWindowTitle(): void {
-    if (!this.window.isDestroyed()) this.window.setTitle(`${this.activeProfile.name} — Open Browser`);
+    if (!this.window.isDestroyed()) {
+      this.window.setTitle(warningWindowTitle(captureWarningStore.snapshot(), `${this.activeProfile.name} — Open Browser`));
+    }
   }
 
   async clearHistoryAndSession(): Promise<void> {
@@ -370,13 +378,14 @@ export class BrowserWindowController {
     const webContents = this.window.webContents;
     if (webContents.isDestroyed()) return;
     webContents.send(IpcChannel.State, this.tabManager.getActiveNavigationState());
-    webContents.send(IpcChannel.TabsState, this.tabManager.getTabsState());
+    webContents.send(IpcChannel.TabsState, { ...this.tabManager.getTabsState(), sessionMediaAccess: captureWarningStore.snapshot() });
   }
 
   private dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
     this.unsubscribe();
+    this.unsubscribeCaptureWarning();
     this.tabManager.destroy();
     controllers.delete(this.webContentsId);
   }

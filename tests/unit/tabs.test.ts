@@ -91,6 +91,21 @@ test('TabManager creates, activates, and keeps independent pages alive', () => {
   assert.equal(manager.getTabsState().activeTabId, firstId);
 });
 
+test('a tab warning remains after switching or navigating until its tab closes', () => {
+  const { manager, engines } = createManager();
+  const first = manager.createTab();
+  engines[0].emitState({ possibleMediaAccess: { camera: true, microphone: false } });
+  const second = manager.createTab();
+  assert.deepEqual(manager.getTabsState().tabs[0].possibleMediaAccess, { camera: true, microphone: false });
+  assert.equal(manager.getTabsState().tabs[1].possibleMediaAccess, undefined);
+  manager.activateTab(first);
+  manager.navigateActive('https://example.com');
+  assert.deepEqual(manager.getTabsState().tabs[0].possibleMediaAccess, { camera: true, microphone: false });
+  manager.closeTab(first);
+  assert.equal(manager.getTabsState().activeTabId, second);
+  assert.equal(manager.getTabsState().tabs[0].possibleMediaAccess, undefined);
+});
+
 test('TabManager routes navigation through the active engine only', () => {
   const { manager, engines } = createManager();
   const firstId = manager.createTab();

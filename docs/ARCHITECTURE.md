@@ -98,7 +98,9 @@ directly.
 **Services (`src/services/`)** hold cross-cutting concerns that aren't
 browsing logic or UI. Eligible website permission requests use a temporary
 native prompt; unsupported requests are denied. Downloads use Electron's native
-save prompt with a safe suggested filename. Persistent permission settings,
+save prompt with a safe suggested filename. After camera or microphone approval,
+in-memory reminders update tabs, the browser session, and native window titles;
+they are not live capture status. Persistent permission settings,
 download management, and settings remain future work — see
 each folder's README and `docs/ROADMAP.md`.
 

@@ -9,6 +9,7 @@ const newTabButton = document.getElementById('new-tab-button') as HTMLButtonElem
 const historyButton = document.getElementById('history-button') as HTMLButtonElement;
 const profilesButton = document.getElementById('profiles-button') as HTMLButtonElement;
 const workspacesButton = document.getElementById('workspaces-button') as HTMLButtonElement;
+const mediaSessionWarning = document.getElementById('media-session-warning') as HTMLSpanElement;
 
 let addressHasFocus = false;
 let focusAddressAfterTabCreation = false;
@@ -16,6 +17,16 @@ let focusActiveTabAfterClose = false;
 
 function renderTabs(state: import('../../shared/types/browserTabs').BrowserTabsState): void {
   tabList.replaceChildren();
+
+  const sessionAccess = state.sessionMediaAccess;
+  const sessionDevice = sessionAccess?.camera && sessionAccess.microphone ? 'Camera and microphone'
+    : sessionAccess?.camera ? 'Camera' : sessionAccess?.microphone ? 'Microphone' : '';
+  mediaSessionWarning.hidden = !sessionDevice;
+  mediaSessionWarning.textContent = sessionDevice ? `${sessionDevice} may be in use` : '';
+  const sessionExplanation = `${sessionDevice} access was allowed in this browser session and may still be in use, including in a popup. This is not live status. To be safe, close all Open Browser windows.`;
+  mediaSessionWarning.title = sessionDevice ? sessionExplanation : '';
+  if (sessionDevice) mediaSessionWarning.setAttribute('aria-label', sessionExplanation);
+  else mediaSessionWarning.removeAttribute('aria-label');
 
   for (const tab of state.tabs) {
     const item = document.createElement('div');
@@ -26,8 +37,24 @@ function renderTabs(state: import('../../shared/types/browserTabs').BrowserTabsS
     selectButton.className = 'tab-select';
     selectButton.dataset.selectTabId = tab.id;
     selectButton.setAttribute('aria-pressed', String(tab.isActive));
-    selectButton.title = tab.url || tab.label;
-    selectButton.textContent = tab.label;
+    const access = tab.possibleMediaAccess;
+    const devices = access?.camera && access.microphone ? 'Camera and microphone'
+      : access?.camera ? 'Camera' : access?.microphone ? 'Microphone' : '';
+    const explanation = `${devices} access was allowed in this tab and may still be in use. This is not live status.`;
+    selectButton.title = devices ? `${tab.url || tab.label}\n${explanation}` : tab.url || tab.label;
+    if (devices) selectButton.setAttribute('aria-label', `${tab.label}. ${explanation}`);
+    const label = document.createElement('span');
+    label.className = 'tab-label';
+    label.textContent = tab.label;
+    selectButton.append(label);
+    for (const [enabled, text] of [[access?.camera, 'CAM?'], [access?.microphone, 'MIC?']] as const) {
+      if (!enabled) continue;
+      const warning = document.createElement('span');
+      warning.className = 'tab-media-warning';
+      warning.setAttribute('aria-hidden', 'true');
+      warning.textContent = text;
+      selectButton.append(warning);
+    }
 
     const closeButton = document.createElement('button');
     closeButton.type = 'button';

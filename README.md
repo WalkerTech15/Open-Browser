@@ -23,6 +23,8 @@ The current prototype provides:
   reopening asks before replacing the current tabs
 - Website prompts for camera, microphone, location, and notifications with
   temporary Allow once / Block choices
+- Cautious camera/microphone reminders on affected tabs and browser windows
+  after access is allowed; these do not report live recording status
 - A native save dialog for downloads
 - Hardened renderer settings and a narrow preload API
 - Unit and integration coverage for navigation and window lifecycle behavior

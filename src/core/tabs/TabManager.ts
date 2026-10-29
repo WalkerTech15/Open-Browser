@@ -142,7 +142,8 @@ export class TabManager {
         label: tabLabel(tab.state.url),
         url: tab.state.url,
         isActive: tab.id === this.activeTabId,
-        isLoading: tab.state.isLoading
+        isLoading: tab.state.isLoading,
+        possibleMediaAccess: tab.state.possibleMediaAccess
       }))
     };
   }
